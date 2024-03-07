@@ -13,7 +13,7 @@ class Logger:
         self.log_3gram: list[dict] = []
         self.interval_start_time: datetime = datetime.now()
 
-    def __on_press(self, key):
+    def __on_press(self, key) -> None:
         try:
             # Guard clause for special keys
             if key == keyboard.Key.space:

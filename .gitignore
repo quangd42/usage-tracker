@@ -4,6 +4,7 @@
 /**/__pycache__
 /**/.pytest_cache
 
-/data
+/build
+/src/*.egg-info
 
 .DS_Store
