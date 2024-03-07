@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from pynput import keyboard
 from pathlib import Path
 
@@ -6,28 +6,51 @@ from pathlib import Path
 class Logger:
     def __init__(self) -> None:
         self.listener: keyboard.Listener = keyboard.Listener(on_press=self.__on_press)
-        self.log: list[str] = []
-        self.start_time: datetime | None = None
-        self.end_time: datetime | None = None
+        self.log_1gram: list[dict[str, str | datetime]] = []
+        self.log_2gram: list[dict[str, str | datetime]] = []
+        self.log_3gram: list[dict[str, str | datetime]] = []
 
-    def __on_press(self, key) -> None:
-        if len(self.log) == 0:
-            try:
-                self.log.append(key.char)
-            except AttributeError:
-                pass
-        else:
-            try:
-                self.log[-1] += key.char
-            except AttributeError:
-                if key == keyboard.Key.space:
-                    self.log[-1] += " "
-                elif key == keyboard.Key.enter:
-                    self.log.append("")
-                else:
-                    pass
-        # finally:
-        #     print(f"{key = }")
+    def __on_press(self, key):
+        try:
+            # Guard clause for special keys
+            if key == keyboard.Key.space:
+                key = " "
+            else:
+                key = key.char
+
+            current_key = {"name": key, "datetime": datetime.now()}
+
+            # Log 2gram if last keypress is within 1 second
+            if len(self.log_1gram) > 0:
+                last_key = self.log_1gram[-1]
+                delta = current_key["datetime"] - last_key["datetime"]
+                if delta / timedelta(microseconds=1) <= 100:
+                    self.log_2gram.append(
+                        {
+                            f"{last_key['name']}{current_key['name']}": current_key[
+                                "datetime"
+                            ]
+                        }
+                    )
+
+            # Log 3gram if last keypress is within 1 second of the 2gram
+            if len(self.log_2gram) > 0:
+                last_key = self.log_2gram[-1]
+                delta = current_key["datetime"] - last_key["datetime"]
+                if delta / timedelta(microseconds=1) <= 100:
+                    self.log_3gram.append(
+                        {
+                            f"{last_key['name']}{current_key['name']}": current_key[
+                                "datetime"
+                            ]
+                        }
+                    )
+
+            # Finally, log 1gram always
+            self.log_1gram.append(current_key)
+
+        except AttributeError:
+            pass
 
     def start(self) -> None:
         if not self.listener.is_alive():
