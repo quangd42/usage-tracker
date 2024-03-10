@@ -11,7 +11,7 @@ class Logger:
         self.log_1gram: list[dict] = []
         self.log_2gram: list[dict] = []
         self.log_3gram: list[dict] = []
-        self.interval_start_time: datetime = datetime.now()
+        self.last_saved: datetime
 
     def __on_press(self, key) -> None:
         try:
@@ -23,20 +23,21 @@ class Logger:
 
             current_key = {"name": key, "datetime": datetime.now()}
 
-            # If last keypress is within 1 second of the previous
             try:
-                # If previous doen't exist, IndexError will be raised
+                # If current keypress is within 1 second of the last then log 2gram
                 last_key = self.log_1gram[-1]
-                time_elapsed = current_key["datetime"] - last_key["datetime"]
-                if time_elapsed.total_seconds() <= 1:
+                if current_key["datetime"] - last_key["datetime"] <= 1:
                     self.log_2gram.append(
                         {
                             "name": last_key["name"] + current_key["name"],
                             "datetime": current_key["datetime"],
                         }
                     )
-                    # Same for 3gram
-                    before_last_key = self.log_1gram[-2]
+
+                # If current keypress is within 2 seconds of keypress before last
+                # then log 3gram
+                before_last_key = self.log_1gram[-2]
+                if current_key["datetime"] - before_last_key["datetime"] <= 2:
                     self.log_3gram.append(
                         {
                             "name": before_last_key["name"]
@@ -46,15 +47,16 @@ class Logger:
                         }
                     )
 
+            # If current key is the first or second keypress ever, just ignore
             except IndexError:
                 pass
 
-            # Finally, log 1gram always
+            # Finally, log current key to 1gram always
             self.log_1gram.append(current_key)
 
             # Save every 60 seconds and clear logs
-            if (datetime.now() - self.interval_start_time) / timedelta(seconds=1) >= 5:
-                self.interval_start_time = datetime.now()
+            if (current_key["datetime"] - self.last_saved) / timedelta(seconds=1) >= 60:
+                self.last_saved = datetime.now()
                 # print(self.log_1gram)
                 # print(self.log_2gram)
                 # print(self.log_3gram)
@@ -112,7 +114,7 @@ class Logger:
 
     def start(self) -> None:
         if not self.listener.is_alive():
-            self.interval_start_time = datetime.now()
+            self.last_saved = datetime.now()
             self.listener.start()
             self.listener.wait()
             self.__db_init(DB_NAME)
