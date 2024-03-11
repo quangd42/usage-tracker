@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "key-logger"
 version = "0.0.1"
-dependencies = ["pynput"]
+dependencies = ["pynput", "click", "tabulate"]
 
 [tool.setuptools.packages.find]
 where = ["src"] # ["."] by default

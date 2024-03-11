@@ -1,6 +1,8 @@
 import click
+from tabulate import tabulate
 
-from logger.genkey_json import create_corpus_json, save_to_json
+from logger.genkey_json import GENKEY_KEYS, create_corpus_json, save_to_json
+from logger.helpers import get_stat_from_db
 from logger.Logger import DB_NAME, Logger
 
 
@@ -25,10 +27,20 @@ def run():
             break
 
 
+# TODO: add option to limit how many rows to show
 @cli.command()
-def view():
-    """View the stats of the logged keys."""
-    pass
+@click.argument("stat_name", type=str)
+def view(stat_name):
+    """View the stats of the logged keys.
+
+    Valid stat names are 'letters', 'bigrams', 'trigrams', 'skipgrams'."""
+    if stat_name not in GENKEY_KEYS:
+        raise click.ClickException(
+            f"Invalid argument. Valid arguments are {GENKEY_KEYS}."
+        )
+
+    stat = get_stat_from_db(stat_name, DB_NAME)
+    click.echo(tabulate(stat, headers="firstrow", tablefmt="rounded_outline"))
 
 
 @cli.command()

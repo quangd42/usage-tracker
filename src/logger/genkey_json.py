@@ -1,20 +1,11 @@
 import json
 import sqlite3
-from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
 
 import click
 
-
-@dataclass
-class GenkeyData:
-    letters: dict[str, int]
-    bigrams: dict[str, int]
-    trigrams: dict[str, int]
-    skipgram: dict[str, float]
-    TotalBigrams: int  # Capitalized because genkey corpus wants that...
-    Total: int
+GENKEY_KEYS = ["letters", "bigrams", "trigrams", "skipgrams"]
 
 
 def create_corpus_json(db_name: str) -> dict:
@@ -22,18 +13,25 @@ def create_corpus_json(db_name: str) -> dict:
     con = sqlite3.connect(db_name)
     cur = con.cursor()
 
-    letters = dict(cur.execute("SELECT * FROM t1gram ORDER BY name").fetchall())
-    bigrams = dict(cur.execute("SELECT * FROM t2gram ORDER BY name").fetchall())
-    trigrams = dict(cur.execute("SELECT * FROM t3gram ORDER BY name").fetchall())
+    letters = dict(cur.execute("SELECT * FROM unigrams ORDER BY name").fetchall())
+    bigrams = dict(cur.execute("SELECT * FROM bigrams ORDER BY name").fetchall())
+    trigrams = dict(cur.execute("SELECT * FROM trigrams ORDER BY name").fetchall())
     skipgrams = dict(cur.execute("SELECT * FROM skipgram ORDER BY name").fetchall())
     totalbigrams = len(bigrams)
     total = len(letters)
 
     con.close()
 
-    data = GenkeyData(letters, bigrams, trigrams, skipgrams, totalbigrams, total)
+    data = {
+        "letters": letters,
+        "bigrams": bigrams,
+        "trigrams": trigrams,
+        "skipgrams": skipgrams,
+        "TotalBigrams": totalbigrams,
+        "Total": total,
+    }
 
-    return asdict(data)
+    return data
 
 
 def save_to_json(dict) -> None:

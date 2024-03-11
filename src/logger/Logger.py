@@ -11,9 +11,9 @@ DB_NAME = "logger.db"
 class Logger:
     def __init__(self) -> None:
         self.listener: keyboard.Listener = keyboard.Listener(on_press=self.__on_press)
-        self.log_1gram: list[dict] = []
-        self.log_2gram: list[dict] = []
-        self.log_3gram: list[dict] = []
+        self.log_unigrams: list[dict] = []
+        self.log_bigrams: list[dict] = []
+        self.log_trigrams: list[dict] = []
         self.last_saved: datetime
 
     def __on_press(self, key) -> None:
@@ -28,10 +28,10 @@ class Logger:
 
             try:
                 # If current keypress is within 1 second of the last then log 2gram
-                last_key = self.log_1gram[-1]
+                last_key = self.log_unigrams[-1]
                 last_key_elapsed = current_key["time"] - last_key["time"]
                 if last_key_elapsed.total_seconds() <= 1:
-                    self.log_2gram.append(
+                    self.log_bigrams.append(
                         {
                             "name": last_key["name"] + current_key["name"],
                             "time": current_key["time"],
@@ -40,10 +40,10 @@ class Logger:
 
                 # If current keypress is within 2 seconds of keypress before last
                 # then log 3gram
-                before_last_key = self.log_1gram[-2]
+                before_last_key = self.log_unigrams[-2]
                 bf_last_key_elapsed = current_key["time"] - before_last_key["time"]
                 if bf_last_key_elapsed.total_seconds() <= 2:
-                    self.log_3gram.append(
+                    self.log_trigrams.append(
                         {
                             "name": before_last_key["name"]
                             + last_key["name"]
@@ -57,16 +57,16 @@ class Logger:
                 pass
 
             # Finally, log current key to 1gram always
-            self.log_1gram.append(current_key)
+            self.log_unigrams.append(current_key)
 
             # Save every 60 seconds and clear logs
             current_interval = current_key["time"] - self.last_saved
             if current_interval.total_seconds() >= 60:
                 self.last_saved = datetime.now()
                 self.__save_to_db(DB_NAME)
-                self.log_1gram.clear()
-                self.log_2gram.clear()
-                self.log_3gram.clear()
+                self.log_unigrams.clear()
+                self.log_bigrams.clear()
+                self.log_trigrams.clear()
 
         except AttributeError:
             pass
@@ -78,10 +78,10 @@ class Logger:
             con = sqlite3.connect(db_name)
             cur = con.cursor()
 
-            cur.execute("CREATE TABLE IF NOT EXISTS t1gram (name UNIQUE, freq);")
-            cur.execute("CREATE TABLE IF NOT EXISTS t2gram (name UNIQUE, freq);")
-            cur.execute("CREATE TABLE IF NOT EXISTS t3gram (name UNIQUE, freq);")
-            cur.execute("CREATE TABLE IF NOT EXISTS skipgram (name UNIQUE, weight);")
+            cur.execute("CREATE TABLE IF NOT EXISTS unigrams (name UNIQUE, freq);")
+            cur.execute("CREATE TABLE IF NOT EXISTS bigrams (name UNIQUE, freq);")
+            cur.execute("CREATE TABLE IF NOT EXISTS trigrams (name UNIQUE, freq);")
+            cur.execute("CREATE TABLE IF NOT EXISTS skipgrams (name UNIQUE, weight);")
             con.close()
 
         except Exception as exception:
@@ -91,39 +91,42 @@ class Logger:
         try:
             con = sqlite3.connect(db_name)
             cur = con.cursor()
-            for index, log in enumerate(
-                [self.log_1gram, self.log_2gram, self.log_3gram]
-            ):
-                for item in log:
+            logs = {
+                "unigrams": self.log_unigrams,
+                "bigrams": self.log_bigrams,
+                "trigrams": self.log_trigrams,
+            }
+            for log_name in logs:
+                for item in logs[log_name]:
                     name = item["name"]
                     res = cur.execute(
-                        f"SELECT * FROM t{index+1}gram WHERE name = ?",
+                        f"SELECT * FROM {log_name} WHERE name = ?",
                         (name,),
                     ).fetchone()
                     if res is None:
                         cur.execute(
-                            f"INSERT INTO t{index+1}gram VALUES(?, ?)",
+                            f"INSERT INTO {log_name} VALUES(?, ?)",
                             (name, 1),
                         )
                     else:
                         cur.execute(
-                            f"UPDATE t{index+1}gram SET freq = freq + 1 WHERE name = ?",
+                            f"UPDATE {log_name} SET freq = freq + 1 WHERE name = ?",
                             (name,),
                         )
-            skipgram = get_skipgram(self.log_1gram)
-            for key in skipgram:
+            skipgrams = get_skipgram(self.log_unigrams)
+            for key in skipgrams:
                 res = cur.execute(
-                    "SELECT * FROM skipgram WHERE name = ?", (key,)
+                    "SELECT * FROM skipgrams WHERE name = ?", (key,)
                 ).fetchone()
                 if res is None:
                     cur.execute(
-                        "INSERT INTO skipgram VALUES(?, ?)",
-                        (key, skipgram[key]),
+                        "INSERT INTO skipgrams VALUES(?, ?)",
+                        (key, skipgrams[key]),
                     )
                 else:
                     cur.execute(
-                        "UPDATE skipgram SET weight = weight + ? WHERE name = ?",
-                        (skipgram[key], key),
+                        "UPDATE skipgrams SET weight = weight + ? WHERE name = ?",
+                        (skipgrams[key], key),
                     )
 
             con.commit()

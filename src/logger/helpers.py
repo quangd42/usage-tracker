@@ -1,3 +1,6 @@
+import sqlite3
+
+
 def get_skipgram(log_1gram: list[dict]) -> dict[str, float]:
     # Skipgram weight: most recent key is 1/2, next key is 1/4
     # and so on up to the most recent 10 keys
@@ -27,3 +30,13 @@ def get_skipgram(log_1gram: list[dict]) -> dict[str, float]:
             last_chars = last_chars[:10]
 
     return skipgram
+
+
+def get_stat_from_db(stat_name: str, db_name: str) -> list[tuple]:
+    con = sqlite3.connect(db_name)
+    cur = con.cursor()
+    if stat_name == "letters":
+        stat_name = "unigrams"
+
+    stat = cur.execute(f"SELECT * FROM {stat_name}").fetchall()
+    return stat
