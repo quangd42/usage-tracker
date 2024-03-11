@@ -1,8 +1,9 @@
 from datetime import datetime
 from pynput import keyboard
 import sqlite3
+import click
 
-from .helpers import get_skipgram
+from logger.helpers import get_skipgram
 
 DB_NAME = "logger.db"
 
@@ -62,9 +63,6 @@ class Logger:
             current_interval = current_key["time"] - self.last_saved
             if current_interval.total_seconds() >= 60:
                 self.last_saved = datetime.now()
-                # print(self.log_1gram)
-                # print(self.log_2gram)
-                # print(self.log_3gram)
                 self.__save_to_db(DB_NAME)
                 self.log_1gram.clear()
                 self.log_2gram.clear()
@@ -73,7 +71,7 @@ class Logger:
         except AttributeError:
             pass
         except Exception as exception:
-            print(f"on_press exception: {exception}")
+            click.echo(f"on_press exception: {exception}")
 
     def __db_init(self, db_name) -> None:
         try:
@@ -87,7 +85,7 @@ class Logger:
             con.close()
 
         except Exception as exception:
-            print(f"__db_init exception: {exception}")
+            click.echo(f"__db_init exception: {exception}")
 
     def __save_to_db(self, db_name) -> None:
         try:
@@ -132,7 +130,7 @@ class Logger:
             con.close()
 
         except Exception as exception:
-            print(f"__save_to_db {exception = }")
+            click.echo(f"__save_to_db {exception = }")
 
     def start(self) -> None:
         if not self.listener.is_alive():
@@ -141,16 +139,13 @@ class Logger:
             self.listener.wait()
             self.__db_init(DB_NAME)
         else:
-            print("Logger is already running...")
+            click.echo("Logger is already running...")
 
     def stop(self) -> None:
         if self.listener.is_alive():
             self.end_time = datetime.now()
             self.listener.stop()
-            # print(self.log_1gram)
-            # print(self.log_2gram)
-            # print(self.log_3gram)
             self.__save_to_db(DB_NAME)
-            print("Session ended.")
+            click.echo("Session ended.")
         else:
-            raise Exception("Logging is not in session.")
+            raise click.ClickException("Logging is not in session.")
