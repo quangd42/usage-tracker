@@ -1,6 +1,8 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 from pynput import keyboard
 import sqlite3
+
+from .helpers import get_skipgram
 
 DB_NAME = "logger.db"
 
@@ -21,29 +23,31 @@ class Logger:
             else:
                 key = key.char
 
-            current_key = {"name": key, "datetime": datetime.now()}
+            current_key = {"name": key, "time": datetime.now()}
 
             try:
                 # If current keypress is within 1 second of the last then log 2gram
                 last_key = self.log_1gram[-1]
-                if current_key["datetime"] - last_key["datetime"] <= 1:
+                last_key_elapsed = current_key["time"] - last_key["time"]
+                if last_key_elapsed.total_seconds() <= 1:
                     self.log_2gram.append(
                         {
                             "name": last_key["name"] + current_key["name"],
-                            "datetime": current_key["datetime"],
+                            "time": current_key["time"],
                         }
                     )
 
                 # If current keypress is within 2 seconds of keypress before last
                 # then log 3gram
                 before_last_key = self.log_1gram[-2]
-                if current_key["datetime"] - before_last_key["datetime"] <= 2:
+                bf_last_key_elapsed = current_key["time"] - before_last_key["time"]
+                if bf_last_key_elapsed.total_seconds() <= 2:
                     self.log_3gram.append(
                         {
                             "name": before_last_key["name"]
                             + last_key["name"]
                             + current_key["name"],
-                            "datetime": current_key["datetime"],
+                            "time": current_key["time"],
                         }
                     )
 
@@ -55,7 +59,8 @@ class Logger:
             self.log_1gram.append(current_key)
 
             # Save every 60 seconds and clear logs
-            if (current_key["datetime"] - self.last_saved) / timedelta(seconds=1) >= 60:
+            current_interval = current_key["time"] - self.last_saved
+            if current_interval.total_seconds() >= 60:
                 self.last_saved = datetime.now()
                 # print(self.log_1gram)
                 # print(self.log_2gram)
