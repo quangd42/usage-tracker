@@ -14,7 +14,7 @@ where = ["src"] # ["."] by default
 # namespaces = false  # true by default
 
 [project.scripts]
-key-logger = "logger.main:main"
+key-logger = "logger.main:cli"
 
 [tool.pyright]
 venv = ".venv"
