@@ -3,7 +3,7 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "vim-usage-logger"
+name = "key-logger"
 version = "0.0.1"
 dependencies = ["pynput"]
 
@@ -14,7 +14,7 @@ where = ["src"] # ["."] by default
 # namespaces = false  # true by default
 
 [project.scripts]
-vim-logger = "logger.main:main"
+key-logger = "logger.main:main"
 
 [tool.pyright]
 venv = ".venv"
