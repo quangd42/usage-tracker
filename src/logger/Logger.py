@@ -83,6 +83,7 @@ class Logger:
             cur.execute("CREATE TABLE IF NOT EXISTS t1gram (name UNIQUE, freq);")
             cur.execute("CREATE TABLE IF NOT EXISTS t2gram (name UNIQUE, freq);")
             cur.execute("CREATE TABLE IF NOT EXISTS t3gram (name UNIQUE, freq);")
+            cur.execute("CREATE TABLE IF NOT EXISTS skipgram (name UNIQUE, weight);")
             con.close()
 
         except Exception as exception:
@@ -111,6 +112,22 @@ class Logger:
                             f"UPDATE t{index+1}gram SET freq = freq + 1 WHERE name = ?",
                             (name,),
                         )
+            skipgram = get_skipgram(self.log_1gram)
+            for key in skipgram:
+                res = cur.execute(
+                    "SELECT * FROM skipgram WHERE name = ?", (key,)
+                ).fetchone()
+                if res is None:
+                    cur.execute(
+                        "INSERT INTO skipgram VALUES(?, ?)",
+                        (key, skipgram[key]),
+                    )
+                else:
+                    cur.execute(
+                        "UPDATE skipgram SET weight = weight + ? WHERE name = ?",
+                        (skipgram[key], key),
+                    )
+
             con.commit()
             con.close()
 
