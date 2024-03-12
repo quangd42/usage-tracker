@@ -7,6 +7,9 @@ Utility to log all of the keypresses categorized into ngrams.
 This will be used as part of a corpus to create a keyboard layout
 that is personalized and tailored to my kind of usage.
 
+Currently supports [genkey](https://github.com/semilin/genkey).
+Support for other analyzers to come.
+
 ## Installation
 
 This was written in python 3.12 so make sure you have python 3.12 installed.
@@ -36,7 +39,7 @@ pip install .
 In the project root folder run
 
 ```sh
-vim-logger
+key-logger
 ```
 
 To stop the script the current hard-coded behavior is to
@@ -56,17 +59,13 @@ In MacOS, you will have to give the terminal appropriate access.
 
 ## Features
 
-- [x] A module with setuptools
 - [x] Logs all keypresses and outputs to a local database, save every 60 seconds.
-- [x] All keypresses should be logged in unigrams, diagrams and trigrams.
+- [x] All keypresses are logged into unigrams, diagrams, trigrams and skipgrams.
+      (Skipgrams in genkey's logic for now).
+- [x] View command to peak at the logged stats so far.
+- [x] Save command to output corpus json file in genkey format.
 
 ## TODO
 
-- [ ] Keypresses should also be processed into skipgrams based on genkey logic,
-      using the 1gram list.
-  - [ ] Create table of log_1gram for each session
-  - [ ] At the end of each session, process log_1gram into skipgram and save
-        into table skipgram. Table skipgram should have an aggregate entry?
-- [ ] Command to convert logged info to json file format that genkey understands
 - [ ] Connects with neovim and only collects keypresses in Normal mode
 - [ ] Auto starts on OS starts.
