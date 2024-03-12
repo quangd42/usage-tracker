@@ -32,11 +32,27 @@ def get_skipgram(log_1gram: list[dict]) -> dict[str, float]:
     return skipgram
 
 
-def get_stat_from_db(stat_name: str, db_name: str) -> list[tuple]:
+def get_stat_from_db(
+    stat_name: str, limit: int, sort_by: str, db_name: str
+) -> list[tuple]:
     con = sqlite3.connect(db_name)
     cur = con.cursor()
+
     if stat_name == "letters":
         stat_name = "unigrams"
 
-    stat = cur.execute(f"SELECT * FROM {stat_name}").fetchall()
+    value_name = sort_by
+    if value_name == "value":
+        if stat_name == "skipgrams":
+            value_name = "weight"
+        else:
+            value_name = "freq"
+
+    data = cur.execute(
+        f"SELECT * FROM {stat_name} ORDER BY {value_name} DESC LIMIT {limit}"
+    )
+    col_names = tuple([column[0] for column in data.description])
+    stat = data.fetchall()
+    stat.insert(0, col_names)
+
     return stat

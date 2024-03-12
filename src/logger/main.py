@@ -27,19 +27,20 @@ def run():
             break
 
 
-# TODO: add option to limit how many rows to show
 @cli.command()
-@click.argument("stat_name", type=str)
-def view(stat_name):
+@click.argument("ngrams_name", type=str)
+@click.option("--limit", "-l", default=20, help="Number of top ngrams to view.")
+@click.option("--sort_by", "-s", default="value", help="Sort results by name or value")
+def view(ngrams_name, limit, sort_by):
     """View the stats of the logged keys.
 
     Valid stat names are 'letters', 'bigrams', 'trigrams', 'skipgrams'."""
-    if stat_name not in GENKEY_KEYS:
+    if ngrams_name not in GENKEY_KEYS:
         raise click.ClickException(
             f"Invalid argument. Valid arguments are {GENKEY_KEYS}."
         )
 
-    stat = get_stat_from_db(stat_name, DB_NAME)
+    stat = get_stat_from_db(ngrams_name, limit, sort_by, DB_NAME)
     click.echo(tabulate(stat, headers="firstrow", tablefmt="rounded_outline"))
 
 
