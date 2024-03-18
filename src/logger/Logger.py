@@ -9,12 +9,13 @@ DB_NAME = "logger.db"
 
 
 class Logger:
-    def __init__(self) -> None:
+    def __init__(self, session: str) -> None:
         self.listener: keyboard.Listener = keyboard.Listener(on_press=self.__on_press)
         self.log_unigrams: list[dict] = []
         self.log_bigrams: list[dict] = []
         self.log_trigrams: list[dict] = []
         self.last_saved: datetime
+        self.session_name: str = session
 
     def __on_press(self, key) -> None:
         try:
@@ -78,10 +79,18 @@ class Logger:
             con = sqlite3.connect(db_name)
             cur = con.cursor()
 
-            cur.execute("CREATE TABLE IF NOT EXISTS unigrams (name UNIQUE, freq);")
-            cur.execute("CREATE TABLE IF NOT EXISTS bigrams (name UNIQUE, freq);")
-            cur.execute("CREATE TABLE IF NOT EXISTS trigrams (name UNIQUE, freq);")
-            cur.execute("CREATE TABLE IF NOT EXISTS skipgrams (name UNIQUE, weight);")
+            cur.execute(
+                "CREATE TABLE IF NOT EXISTS unigrams (id integer PRIMARY KEY, name, freq, session);"
+            )
+            cur.execute(
+                "CREATE TABLE IF NOT EXISTS bigrams (id integer PRIMARY KEY, name, freq, session);"
+            )
+            cur.execute(
+                "CREATE TABLE IF NOT EXISTS trigrams (id integer PRIMARY KEY, name, freq, session);"
+            )
+            cur.execute(
+                "CREATE TABLE IF NOT EXISTS skipgrams (id integer PRIMARY KEY, name, weight, session);"
+            )
             con.close()
 
         except Exception as exception:
@@ -100,33 +109,34 @@ class Logger:
                 for item in logs[log_name]:
                     name = item["name"]
                     res = cur.execute(
-                        f"SELECT * FROM {log_name} WHERE name = ?",
-                        (name,),
+                        f"SELECT id FROM {log_name} WHERE name = ? AND session = ?",
+                        (name, self.session_name),
                     ).fetchone()
                     if res is None:
                         cur.execute(
-                            f"INSERT INTO {log_name} VALUES(?, ?)",
-                            (name, 1),
+                            f"INSERT INTO {log_name} VALUES(NULL, ?, ?, ?)",
+                            (name, 1, self.session_name),
                         )
                     else:
                         cur.execute(
-                            f"UPDATE {log_name} SET freq = freq + 1 WHERE name = ?",
-                            (name,),
+                            f"UPDATE {log_name} SET freq = freq + 1 WHERE id = ?",
+                            (res[0],),
                         )
             skipgrams = get_skipgram(self.log_unigrams)
             for key in skipgrams:
                 res = cur.execute(
-                    "SELECT * FROM skipgrams WHERE name = ?", (key,)
+                    "SELECT id FROM skipgrams WHERE name = ? AND session = ?",
+                    (key, self.session_name),
                 ).fetchone()
                 if res is None:
                     cur.execute(
-                        "INSERT INTO skipgrams VALUES(?, ?)",
-                        (key, skipgrams[key]),
+                        "INSERT INTO skipgrams VALUES(NULL, ?, ?, ?)",
+                        (key, skipgrams[key], self.session_name),
                     )
                 else:
                     cur.execute(
-                        "UPDATE skipgrams SET weight = weight + ? WHERE name = ?",
-                        (skipgrams[key], key),
+                        "UPDATE skipgrams SET weight = weight + ? WHERE id = ?",
+                        (skipgrams[key], res[0]),
                     )
 
             con.commit()

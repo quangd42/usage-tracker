@@ -64,8 +64,9 @@ In MacOS, you will have to give the terminal appropriate access.
       (Skipgrams in genkey's logic for now).
 - [x] View command to peak at the logged stats so far.
 - [x] Save command to output corpus json file in genkey format.
+- [x] Logging are saved into sessions.
 
 ## TODO
 
 - [ ] Connects with neovim and only collects keypresses in Normal mode
-- [ ] Auto starts on OS starts.
+- [ ] Auto starts on OS start.
