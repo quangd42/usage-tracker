@@ -20,10 +20,24 @@ class Logger:
     def __on_press(self, key) -> None:
         try:
             # Guard clause for special keys
-            if key == keyboard.Key.space:
-                key = " "
-            else:
-                key = key.char
+
+            match key:
+                case keyboard.Key.space:
+                    key = "<space>"
+                case keyboard.Key.down:
+                    key = "<down>"
+                case keyboard.Key.left:
+                    key = "<left>"
+                case keyboard.Key.right:
+                    key = "<right>"
+                case keyboard.Key.up:
+                    key = "<up>"
+                case keyboard.Key.esc:
+                    key = "<esc>"
+                case keyboard.Key.tab:
+                    key = "<tab>"
+                case _:
+                    key = key.char
 
             current_key = {"name": key, "time": datetime.now()}
 
@@ -70,6 +84,7 @@ class Logger:
                 self.log_trigrams.clear()
 
         except AttributeError:
+            # When key.char doesn't exist
             pass
         except Exception as exception:
             click.echo(f"on_press exception: {exception}")
