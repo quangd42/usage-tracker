@@ -7,6 +7,7 @@ from logger.helpers import get_session_list, get_stat_from_db
 from logger.Logger import DB_NAME, Logger
 
 
+# TODO: add better type annotation
 @click.group()
 def cli():
     """CLI tool to log all keypresses for keyboard layout optimization.
@@ -23,7 +24,7 @@ def cli():
     "--session",
     help="Continue logging into session with provided name.",
 )
-def run(new, session):
+def run(new: str, session: str):
     """Start the logger with the provided session name.
 
     End the logger with by typing `.end` command."""
@@ -69,12 +70,21 @@ def run(new, session):
     help="Ngram name to view",
 )
 @click.option("--limit", "-l", default=20, help="Number of top ngrams to view.")
-@click.option("--sort_by", "-s", default="value", help="Sort results by name or value.")
-def view(session, ngrams_name, limit, sort_by):
+@click.option(
+    "--sort_by",
+    "-s",
+    default="value",
+    type=click.Choice(["name", "value"]),
+    help="Sort results by name or value.",
+)
+def view(session: str, ngrams_name: str, limit: int, sort_by: str):
     """View the stats of the logged keys of provided session name.
 
     Valid stat names are 'letters', 'bigrams', 'trigrams', 'skipgrams'."""
 
+    sessions = get_session_list(DB_NAME)
+    if session not in sessions:
+        raise click.ClickException("Session does not exist.")
     stat = get_stat_from_db(
         session=session,
         stat_name=ngrams_name,

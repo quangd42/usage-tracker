@@ -36,7 +36,7 @@ def get_skipgram(log_1gram: list[dict]) -> dict[str, float]:
 
 def get_stat_from_db(
     session: str, stat_name: str, limit: int, sort_by: str, db_name: str
-) -> list[tuple]:
+) -> list[tuple[str, str]]:
     con = sqlite3.connect(db_name)
     cur = con.cursor()
 
@@ -63,7 +63,7 @@ def get_stat_from_db(
     return stat
 
 
-def get_session_list(db_name) -> list[str]:
+def get_session_list(db_name: str) -> list[str]:
     con = sqlite3.connect(db_name)
     cur = con.cursor()
 
