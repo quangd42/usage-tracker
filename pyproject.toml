@@ -19,3 +19,4 @@ key-logger = "logger.main:cli"
 [tool.pyright]
 venv = ".venv"
 venvPath = "."
+strict = ["/src/logger/**/*"]
