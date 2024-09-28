@@ -6,6 +6,7 @@ from datetime import datetime
 class LoggedKey:
     name: str
     time: datetime = datetime.now()
+    is_letter: bool = True
 
 
 class LoggerException(Exception):

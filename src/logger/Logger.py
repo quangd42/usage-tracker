@@ -25,43 +25,48 @@ class Logger:
             return
 
         # Guard clause for special keys
-        # TODO: these special keys can be used to mark new start for bigrams and trigrams
-        match key:
-            case keyboard.Key.space:
-                key = "<space>"
-            case keyboard.Key.down:
-                key = "<down>"
-            case keyboard.Key.left:
-                key = "<left>"
-            case keyboard.Key.right:
-                key = "<right>"
-            case keyboard.Key.up:
-                key = "<up>"
-            case keyboard.Key.esc:
-                key = "<esc>"
-            case keyboard.Key.tab:
-                key = "<tab>"
-            case _:
-                try:
-                    key = key.char
-                except AttributeError:
-                    # Ignore when key.char doesn't exist
-                    return
-
-        current_key = LoggedKey(key)
+        if isinstance(key, keyboard.Key):
+            match key:
+                case keyboard.Key.space:
+                    key_str = "<space>"
+                case keyboard.Key.down:
+                    key_str = "<down>"
+                case keyboard.Key.left:
+                    key_str = "<left>"
+                case keyboard.Key.right:
+                    key_str = "<right>"
+                case keyboard.Key.up:
+                    key_str = "<up>"
+                case keyboard.Key.esc:
+                    key_str = "<esc>"
+                case keyboard.Key.tab:
+                    key_str = "<tab>"
+                case _:
+                    key_str = ""
+            current_key = LoggedKey(key_str, is_letter=False)
+        else:
+            key_str = key.char
+            current_key = LoggedKey(key_str)
 
         try:
-            # If current keypress is within 1 second of the last then log 2gram
+            # If last keypress is not letter, then no 2gram or 3gram
             last_key = self.log_letters[-1]
+            if not last_key.is_letter or not current_key.is_letter:
+                raise Exception
+
+            # If current keypress is within 1 second of the last then log 2gram
             last_key_elapsed = current_key.time - last_key.time
             if last_key_elapsed.total_seconds() <= 1:
                 self.log_bigrams.append(
                     LoggedKey(name=last_key.name + current_key.name)
                 )
 
-            # If current keypress is within 2 seconds of keypress before last
-            # then log 3gram
+            # If keypress before last is not letter, then no 3gram
             before_last_key = self.log_letters[-2]
+            if not before_last_key.is_letter:
+                raise Exception
+
+            # If current keypress is within 2 seconds of keypress before last then log 3gram
             bf_last_key_elapsed = current_key.time - before_last_key.time
             if bf_last_key_elapsed.total_seconds() <= 2:
                 self.log_trigrams.append(
@@ -72,6 +77,8 @@ class Logger:
 
         # If current key is the first or second keypress ever, just ignore
         except IndexError:
+            pass
+        except Exception:
             pass
 
         # Finally, log current key to 1gram always
