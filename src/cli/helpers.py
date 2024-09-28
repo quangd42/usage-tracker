@@ -9,9 +9,6 @@ def get_stat_from_db(
     con = sqlite3.connect(db_name)
     cur = con.cursor()
 
-    if stat_name == "letters":
-        stat_name = "unigrams"
-
     value_name = sort_by
     if value_name == "value":
         if stat_name == "skipgrams":
@@ -38,7 +35,7 @@ def get_session_list(db_name: str) -> list[str]:
 
     # NOTE: res is a list of tuples so it's best to convert to list of string?
     try:
-        res = cur.execute("SELECT DISTINCT session from unigrams").fetchall()
+        res = cur.execute("SELECT DISTINCT session from letters").fetchall()
     except Exception as e:
         raise ClickException(f"Error getting sessions: {e}")
     return [session[0] for session in res]

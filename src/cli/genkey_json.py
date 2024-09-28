@@ -13,7 +13,7 @@ def create_corpus_json(db_name: str) -> dict:
     con = sqlite3.connect(db_name)
     cur = con.cursor()
 
-    letters = dict(cur.execute("SELECT * FROM unigrams ORDER BY name").fetchall())
+    letters = dict(cur.execute("SELECT * FROM letters ORDER BY name").fetchall())
     bigrams = dict(cur.execute("SELECT * FROM bigrams ORDER BY name").fetchall())
     trigrams = dict(cur.execute("SELECT * FROM trigrams ORDER BY name").fetchall())
     skipgrams = dict(cur.execute("SELECT * FROM skipgram ORDER BY name").fetchall())
