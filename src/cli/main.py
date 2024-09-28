@@ -2,9 +2,9 @@ import click
 from click.exceptions import Abort
 from tabulate import tabulate
 
-from logger.genkey_json import GENKEY_KEYS, create_corpus_json, save_to_json
-from logger.helpers import get_session_list, get_stat_from_db
-from logger.Logger import DB_NAME, Logger
+from cli.genkey_json import GENKEY_KEYS, create_corpus_json, save_to_json
+from cli.helpers import get_session_list, get_stat_from_db
+from logger.logger import DB_NAME, Logger
 
 
 # TODO: add better type annotation
@@ -54,10 +54,17 @@ def run(new: str, session: str):
         f"Started session {click.style(session, italic=True, bold=True)}. Listening to all keystrokes..."
     )
     while True:
-        command = input("Command: ")
-        if command == ".end":
-            logger.stop()
-            break
+        try:
+            command = input("Command: ")
+            if command == ".end":
+                logger.stop()
+                break
+            if command == ".pse":
+                logger.pause()
+            if command == ".rse":
+                logger.resume()
+        except Exception as e:
+            raise click.ClickException(f"error: {e}")
 
 
 @cli.command()
@@ -97,6 +104,7 @@ def view(session: str, ngrams_name: str, limit: int, sort_by: str):
     click.echo(tabulate(stat, headers="firstrow", tablefmt="rounded_outline"))
 
 
+# TODO: need to prompt for session name
 @cli.command()
 # @click.option("-f", "--format", default="g", help="Format for consuming analyzers")
 def save():

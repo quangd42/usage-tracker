@@ -1,15 +1,15 @@
-from datetime import datetime
-from .helpers import get_skipgram
+from .helpers import calc_skipgrams
+from .types import LoggedKey
 
 
 def test_get_skipgram():
     log = [
-        {"name": "c", "datetime": datetime.now()},
-        {"name": "r", "datetime": datetime.now()},
-        {"name": "t", "datetime": datetime.now()},
-        {"name": "s", "datetime": datetime.now()},
-        {"name": "c", "datetime": datetime.now()},
-        {"name": "t", "datetime": datetime.now()},
+        LoggedKey("c"),
+        LoggedKey("r"),
+        LoggedKey("t"),
+        LoggedKey("s"),
+        LoggedKey("c"),
+        LoggedKey("t"),
     ]
 
     weight = []
@@ -31,7 +31,7 @@ def test_get_skipgram():
         "tt": 0.125,
     }
 
-    assert get_skipgram(log) == expected
+    assert calc_skipgrams(log) == expected
 
 
 if __name__ == "__main__":
