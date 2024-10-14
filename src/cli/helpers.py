@@ -1,6 +1,8 @@
 import sqlite3
 
+import click
 from click import ClickException
+from tabulate import tabulate
 
 
 def get_stat_from_db(
@@ -10,11 +12,11 @@ def get_stat_from_db(
     cur = con.cursor()
 
     value_name = sort_by
-    if value_name == "value":
-        if stat_name == "skipgrams":
-            value_name = "weight"
+    if value_name == 'value':
+        if stat_name == 'skipgrams':
+            value_name = 'weight'
         else:
-            value_name = "freq"
+            value_name = 'freq'
 
     try:
         data = cur.execute(
@@ -24,7 +26,7 @@ def get_stat_from_db(
         stat = data.fetchall()
         stat.insert(0, col_names)
     except Exception as e:
-        raise ClickException(f"Error getting stats: {e}")
+        raise ClickException(f'Error getting stats: {e}')
 
     return stat
 
@@ -35,7 +37,19 @@ def get_session_list(db_name: str) -> list[str]:
 
     # NOTE: res is a list of tuples so it's best to convert to list of string?
     try:
-        res = cur.execute("SELECT DISTINCT session from letters").fetchall()
-    except Exception as e:
-        raise ClickException(f"Error getting sessions: {e}")
+        res = cur.execute('SELECT DISTINCT session from letters').fetchall()
+    except Exception:
+        raise ClickException('No saved sessions.')
     return [session[0] for session in res]
+
+
+def print_session_list(sessions: list[str]) -> None:
+    click.echo('Existing session/s:')
+    click.echo(
+        tabulate(
+            enumerate(sessions),
+            headers=['no', 'session'],
+            tablefmt='rounded_outline',
+            showindex=False,
+        )
+    )
