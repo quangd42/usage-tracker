@@ -2,7 +2,7 @@ import click
 from click.exceptions import Abort
 from tabulate import tabulate
 
-from cli.corpora_json import GenkeyOutput, create_genkey_json, save_to_json
+from cli.corpus_json import GenkeyOutput, create_genkey_json, save_to_json
 from cli.helpers import get_session_list, get_stat_from_db, print_session_list
 from logger.logger import DB_NAME, Logger
 
