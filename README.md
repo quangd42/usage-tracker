@@ -39,10 +39,10 @@ pip install .
 In the project root folder run
 
 ```sh
-key-logger
+klgr
 ```
 
-To stop the script the current hard-coded behavior is to
+To stop the script and save results, the current hard-coded behavior is to
 use command `.end` in the terminal where the script is running.
 
 ```sh
@@ -66,7 +66,19 @@ In MacOS, you will have to give the terminal appropriate access.
 - [x] Save command to output corpus json file in genkey format.
 - [x] Logging are saved into sessions.
 
-## TODO
+## Development
 
-- [ ] Connects with neovim and only collects keypresses in Normal mode
-- [ ] Auto starts on OS start.
+Start an virtual env so that this script is contained in this workspace only,
+and install dependencies.
+
+```sh
+python3 -m venv .cli_venv
+source .cli_venv/bin/activate
+pip install -r requirements.txt
+```
+
+For local development, install with --editable flag.
+
+```sh
+pip install -e .
+```

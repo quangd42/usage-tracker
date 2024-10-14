@@ -12,7 +12,7 @@ from logger.logger import DB_NAME, Logger
 def cli():
     """CLI tool to log all keypresses for keyboard layout optimization.
 
-    To see help for each command use: key-logger COMMAND --help"""
+    To see help for each command use: klgr COMMAND --help"""
     pass
 
 
