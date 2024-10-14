@@ -2,9 +2,11 @@ import click
 from click.exceptions import Abort
 from tabulate import tabulate
 
-from cli.genkey_json import GENKEY_KEYS, create_corpus_json, save_to_json
 from cli.helpers import get_session_list, get_stat_from_db
+from cli.corpora_json import GenkeyOutput, create_genkey_json, save_to_json
 from logger.logger import DB_NAME, Logger
+
+GENKEY_KEYS = GenkeyOutput.list_keys()
 
 
 # TODO: add better type annotation
@@ -104,14 +106,20 @@ def view(session: str, ngrams_name: str, limit: int, sort_by: str):
     click.echo(tabulate(stat, headers="firstrow", tablefmt="rounded_outline"))
 
 
-# TODO: need to prompt for session name
 @cli.command()
+# Support genkey only for now so "g" is the only option
 # @click.option("-f", "--format", default="g", help="Format for consuming analyzers")
-def save():
+def save() -> None:
     """Save logged keys to corpus json, default in genkey corput format."""
-    # Support genkey only for now so "g" is the only option
-    # NOTE: Use enum for other analyzers later
-    data = create_corpus_json(DB_NAME)
+
+    session_list = get_session_list(DB_NAME)
+    session = click.prompt(
+        'Choose session',
+        type=click.Choice(session_list, case_sensitive=False),
+        show_choices=False,
+    )
+
+    data = create_genkey_json(DB_NAME, session)
     save_to_json(data)
 
 
