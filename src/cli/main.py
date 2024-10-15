@@ -113,6 +113,7 @@ def view(session: str, ngrams_name: str, limit: int, sort_by: str) -> None:
     click.echo(tabulate(stat, headers='firstrow', tablefmt='rounded_outline'))
 
 
+# TODO: when exporting to genkey, handle shifted symbols, i.e. ? -> /
 @cli.command()
 # Support genkey only for now so "g" is the only option
 # @click.option("-f", "--format", default="g", help="Format for consuming analyzers")

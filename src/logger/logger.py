@@ -1,52 +1,46 @@
 import sqlite3
 from datetime import datetime
 
-from pynput import keyboard
+from pynput import keyboard as kb
 
-from .helpers import calc_skipgrams
-from .types import LoggedKey, LoggerException
+from logger.helpers import calc_skipgrams
+from logger.types import LoggedKey, LoggerException, MODIFIERS
 
-DB_NAME = "logger.db"
+DB_NAME = 'logger.db'
 
 
 class Logger:
     def __init__(self, session: str) -> None:
-        self.listener: keyboard.Listener = keyboard.Listener(on_press=self.__on_press)
+        self.listener: kb.Listener = kb.Listener(
+            on_press=self._on_press, on_release=self._on_release
+        )
         self.log_letters: list[LoggedKey] = []
         self.log_bigrams: list[LoggedKey] = []
         self.log_trigrams: list[LoggedKey] = []
+        self.pressed_mods: set[kb.Key | kb.KeyCode] = set()
         self.last_saved: datetime
         self.session_name: str = session
         self.is_paused: bool = False
 
-    def __on_press(self, key) -> None:
+    def _on_press(self, key: kb.Key | kb.KeyCode | None) -> None:
         # Ignore when logger is paused
-        if self.is_paused:
+        if not key or self.is_paused:
             return
 
-        # Guard clause for special keys
-        if isinstance(key, keyboard.Key):
-            match key:
-                case keyboard.Key.space:
-                    key_str = "<space>"
-                case keyboard.Key.down:
-                    key_str = "<down>"
-                case keyboard.Key.left:
-                    key_str = "<left>"
-                case keyboard.Key.right:
-                    key_str = "<right>"
-                case keyboard.Key.up:
-                    key_str = "<up>"
-                case keyboard.Key.esc:
-                    key_str = "<esc>"
-                case keyboard.Key.tab:
-                    key_str = "<tab>"
-                case _:
-                    key_str = ""
-            current_key = LoggedKey(key_str, is_letter=False)
+        # If modifier, add to mods
+        if key in MODIFIERS:
+            self.pressed_mods.add(self.listener.canonical(key))
+            return
+
+        # If function keys
+        if isinstance(key, kb.Key):
+            current_key = LoggedKey(
+                name=str(key.name), mods=list(self.pressed_mods), is_letter=False
+            )
+            print(current_key)
         else:
-            key_str = key.char
-            current_key = LoggedKey(key_str)
+            can_key = self.listener.canonical(key)
+            current_key = LoggedKey(name=can_key.char, mods=list(self.pressed_mods))  # type: ignore
 
         try:
             # If last keypress is not letter, then no 2gram or 3gram
@@ -88,73 +82,78 @@ class Logger:
         current_interval = current_key.time - self.last_saved
         if current_interval.total_seconds() >= 60:
             self.last_saved = datetime.now()
-            self.__save_to_db(DB_NAME)
+            self._save_to_db(DB_NAME)
             self.log_letters.clear()
             self.log_bigrams.clear()
             self.log_trigrams.clear()
 
-    def __db_init(self, db_name) -> None:
+    def _on_release(self, key: kb.Key | kb.KeyCode | None) -> None:
+        if key in MODIFIERS:
+            self.pressed_mods.remove(self.listener.canonical(key))
+
+    # TODO: add table for mods, connect with letters
+    def _db_init(self, db_name) -> None:
         try:
             con = sqlite3.connect(db_name)
             cur = con.cursor()
 
             cur.execute(
-                "CREATE TABLE IF NOT EXISTS letters (id integer PRIMARY KEY, name, freq, session);"
+                'CREATE TABLE IF NOT EXISTS letters (id integer PRIMARY KEY, name, freq, session);'
             )
             cur.execute(
-                "CREATE TABLE IF NOT EXISTS bigrams (id integer PRIMARY KEY, name, freq, session);"
+                'CREATE TABLE IF NOT EXISTS bigrams (id integer PRIMARY KEY, name, freq, session);'
             )
             cur.execute(
-                "CREATE TABLE IF NOT EXISTS trigrams (id integer PRIMARY KEY, name, freq, session);"
+                'CREATE TABLE IF NOT EXISTS trigrams (id integer PRIMARY KEY, name, freq, session);'
             )
             cur.execute(
-                "CREATE TABLE IF NOT EXISTS skipgrams (id integer PRIMARY KEY, name, weight, session);"
+                'CREATE TABLE IF NOT EXISTS skipgrams (id integer PRIMARY KEY, name, weight, session);'
             )
             con.close()
 
         except Exception as exception:
-            raise LoggerException(f"__db_init exception: {exception}")
+            raise LoggerException(f'__db_init exception: {exception}')
 
-    def __save_to_db(self, db_name) -> None:
+    def _save_to_db(self, db_name) -> None:
         try:
             con = sqlite3.connect(db_name)
             cur = con.cursor()
             logs = {
-                "letters": self.log_letters,
-                "bigrams": self.log_bigrams,
-                "trigrams": self.log_trigrams,
+                'letters': self.log_letters,
+                'bigrams': self.log_bigrams,
+                'trigrams': self.log_trigrams,
             }
             for log_name in logs:
                 for item in logs[log_name]:
                     name = item.name
                     res = cur.execute(
-                        f"SELECT id FROM {log_name} WHERE name = ? AND session = ?",
+                        f'SELECT id FROM {log_name} WHERE name = ? AND session = ?',
                         (name, self.session_name),
                     ).fetchone()
                     if res is None:
                         cur.execute(
-                            f"INSERT INTO {log_name} VALUES(NULL, ?, ?, ?)",
+                            f'INSERT INTO {log_name} VALUES(NULL, ?, ?, ?)',
                             (name, 1, self.session_name),
                         )
                     else:
                         cur.execute(
-                            f"UPDATE {log_name} SET freq = freq + 1 WHERE id = ?",
+                            f'UPDATE {log_name} SET freq = freq + 1 WHERE id = ?',
                             (res[0],),
                         )
             skipgrams = calc_skipgrams(self.log_letters)
             for key in skipgrams:
                 res = cur.execute(
-                    "SELECT id FROM skipgrams WHERE name = ? AND session = ?",
+                    'SELECT id FROM skipgrams WHERE name = ? AND session = ?',
                     (key, self.session_name),
                 ).fetchone()
                 if res is None:
                     cur.execute(
-                        "INSERT INTO skipgrams VALUES(NULL, ?, ?, ?)",
+                        'INSERT INTO skipgrams VALUES(NULL, ?, ?, ?)',
                         (key, skipgrams[key], self.session_name),
                     )
                 else:
                     cur.execute(
-                        "UPDATE skipgrams SET weight = weight + ? WHERE id = ?",
+                        'UPDATE skipgrams SET weight = weight + ? WHERE id = ?',
                         (skipgrams[key], res[0]),
                     )
 
@@ -162,34 +161,34 @@ class Logger:
             con.close()
 
         except Exception as exception:
-            raise LoggerException(f"__save_to_db {exception = }")
+            raise LoggerException(f'__save_to_db {exception = }')
 
     def start(self) -> None:
         if not self.listener.is_alive():
             self.last_saved = datetime.now()
             self.listener.start()
             self.listener.wait()
-            self.__db_init(DB_NAME)
+            self._db_init(DB_NAME)
 
     def stop(self) -> None:
         if self.listener.is_alive():
             self.end_time = datetime.now()
             self.listener.stop()
-            self.__save_to_db(DB_NAME)
-            print("Session ended.")
+            self._save_to_db(DB_NAME)
+            print('Session ended.')
         else:
-            raise LoggerException("Logging is not in session.")
+            raise LoggerException('Logging is not in session.')
 
     def pause(self) -> None:
         if self.listener.is_alive():
             self.is_paused = True
-            print("Session paused...")
+            print('Session paused...')
         else:
-            raise LoggerException("Logging is not in session.")
+            raise LoggerException('Logging is not in session.')
 
     def resume(self) -> None:
         if self.listener.is_alive():
             self.is_paused = False
-            print("Session resumed...")
+            print('Session resumed...')
         else:
-            raise LoggerException("Logging is not in session.")
+            raise LoggerException('Logging is not in session.')
