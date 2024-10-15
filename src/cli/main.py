@@ -1,12 +1,13 @@
 import click
-from click.exceptions import Abort
 from tabulate import tabulate
 
 from cli.corpus_json import GenkeyOutput, create_genkey_json, save_to_json
-from cli.helpers import get_session_list, get_stat_from_db, print_session_list
-from logger.logger import DB_NAME, Logger
+from cli.helpers import print_session_list
+from db.queries import DatabaseQueries
+from logger.logger import Logger
 
 GENKEY_KEYS = GenkeyOutput.list_keys()
+DB_NAME = 'logger.db'
 
 
 @click.group()
@@ -19,36 +20,25 @@ def cli() -> None:
 
 @cli.command()
 # TODO: default option to use the last session
-@click.option('-n', '--new_name', help='Start a new session with provided name.')
-@click.option(
-    '-s',
-    '--session',
-    help='Continue logging into session with provided name.',
-)
-def run(new_name: str, session: str) -> None:
+@click.option('-n', '--name', help='Start a session with provided name.')
+def run(name: str) -> None:
     """Start the logger with the provided session name.
 
     End the logger with by typing `.end` command."""
 
-    if new_name:
-        session = new_name
-    elif not session:
-        try:
-            session_list = get_session_list(DB_NAME)
-            print_session_list(session_list)
-            session = click.prompt(
-                "Choose session or 'new' to start new",
-                type=click.Choice(session_list + ['new'], case_sensitive=False),
-                show_choices=False,
-            )
-            if session == 'new':
-                raise Exception
-        except Abort:
-            raise click.Abort()
-        except Exception:
-            session = click.prompt('Session name')
+    db = DatabaseQueries(DB_NAME)
+    if not name:
+        session_list = db.list_sessions()
+        print_session_list(session_list)
+        name = click.prompt(
+            'Choose from existing session or type "new" for new session',
+            type=click.Choice(session_list + ['new'], case_sensitive=False),
+            show_choices=False,
+        )
+        if name == 'new':
+            name = click.prompt('New session name')
 
-    logger = Logger(session)
+    logger = Logger(db, name)
     logger.start()
 
     click.echo('---')
@@ -58,7 +48,7 @@ def run(new_name: str, session: str) -> None:
     '.end': Stop logging and save to db.
     """)
     click.echo(
-        f'Started session {click.style(session, italic=True, bold=True)}. Listening to all keystrokes...'
+        f'Started session {click.style(name, italic=True, bold=True)}. Listening to all keystrokes...'
     )
     while True:
         try:
@@ -96,17 +86,17 @@ def view(session: str, ngrams_name: str, limit: int, sort_by: str) -> None:
 
     Valid stat names are 'letters', 'bigrams', 'trigrams', 'skipgrams'."""
 
-    sessions = get_session_list(DB_NAME)
+    db = DatabaseQueries(DB_NAME)
+    sessions = db.list_sessions()
     if session not in sessions:
         print_session_list(sessions)
         raise click.ClickException('Exception: Session does not exist.')
 
-    stat = get_stat_from_db(
+    stat = db.get_stats(
         session=session,
         stat_name=ngrams_name,
         limit=limit,
         sort_by=sort_by,
-        db_name=DB_NAME,
     )
     click.echo(f'Session: {session}')
     click.echo(f'Ngram: {ngrams_name}')
@@ -120,7 +110,8 @@ def view(session: str, ngrams_name: str, limit: int, sort_by: str) -> None:
 def save() -> None:
     """Save logged keys to corpus json, default in genkey corput format."""
 
-    session_list = get_session_list(DB_NAME)
+    db = DatabaseQueries(DB_NAME)
+    session_list = db.list_sessions()
     print_session_list(session_list)
     session = click.prompt(
         'Choose session',
@@ -136,7 +127,8 @@ def save() -> None:
 def list() -> None:
     """List logged sessions by name."""
 
-    session_list = get_session_list(DB_NAME)
+    db = DatabaseQueries(DB_NAME)
+    session_list = db.list_sessions()
     print_session_list(session_list)
 
 

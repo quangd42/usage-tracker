@@ -1,4 +1,4 @@
-from .types import LoggedKey
+from logger.types import LoggedKey
 
 
 def calc_skipgrams(log_1gram: list[LoggedKey]) -> dict[str, float]:
