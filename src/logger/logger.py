@@ -3,7 +3,7 @@ from datetime import datetime
 from pynput import keyboard as kb
 
 from db.queries import DatabaseQueries
-from logger.types import MODIFIERS, LoggedKey, LoggerException
+from logger.types import MODIFIERS, LoggedKey
 
 
 class Logger:
@@ -39,38 +39,8 @@ class Logger:
             can_key = self.listener.canonical(key)
             current_key = LoggedKey(name=can_key.char, mods=list(self.pressed_mods))  # type: ignore
 
-        try:
-            # If last keypress is not letter, then no 2gram or 3gram
-            last_key = self.log_letters[-1]
-            if not last_key.is_letter or not current_key.is_letter:
-                raise Exception
-
-            # If current keypress is within 1 second of the last then log 2gram
-            last_key_elapsed = current_key.time - last_key.time
-            if last_key_elapsed.total_seconds() <= 1:
-                self.log_bigrams.append(
-                    LoggedKey(name=last_key.name + current_key.name)
-                )
-
-            # If keypress before last is not letter, then no 3gram
-            before_last_key = self.log_letters[-2]
-            if not before_last_key.is_letter:
-                raise Exception
-
-            # If current keypress is within 2 seconds of keypress before last then log 3gram
-            bf_last_key_elapsed = current_key.time - before_last_key.time
-            if bf_last_key_elapsed.total_seconds() <= 2:
-                self.log_trigrams.append(
-                    LoggedKey(
-                        name=before_last_key.name + last_key.name + current_key.name,
-                    )
-                )
-
-        # If current key is the first or second keypress ever, just ignore
-        except IndexError:
-            pass
-        except Exception:
-            pass
+        # Try to log bigram and trigram
+        self._log_ngram(current_key)
 
         # Finally, log current key to 1gram always
         self.log_letters.append(current_key)
@@ -88,6 +58,36 @@ class Logger:
         if key in MODIFIERS:
             self.pressed_mods.remove(self.listener.canonical(key))
 
+    def _log_ngram(self, current_key: LoggedKey) -> None:
+        # If this is first keypress, no bigram
+        if len(self.log_letters) == 0:
+            return
+        last_key = self.log_letters[-1]
+        if not last_key.is_letter or not current_key.is_letter:
+            return
+
+        # If current keypress is within 1 second of the last then log 2gram
+        last_key_elapsed = current_key.time - last_key.time
+        if last_key_elapsed.total_seconds() <= 1:
+            self.log_bigrams.append(LoggedKey(name=last_key.name + current_key.name))
+
+        # Needs at least 2 previous keys to assess trigrams
+        if len(self.log_letters) < 2:
+            return
+        # If keypress before last is not letter, then no 3gram
+        before_last_key = self.log_letters[-2]
+        if not before_last_key.is_letter:
+            return
+
+        # If current keypress is within 2 seconds of keypress before last then log 3gram
+        bf_last_key_elapsed = current_key.time - before_last_key.time
+        if bf_last_key_elapsed.total_seconds() <= 2:
+            self.log_trigrams.append(
+                LoggedKey(
+                    name=before_last_key.name + last_key.name + current_key.name,
+                )
+            )
+
     def _save_to_db(self) -> None:
         try:
             self.db.save_log_letters(self.log_letters, self.session_name)
@@ -97,7 +97,7 @@ class Logger:
             self.db.conn.commit()
 
         except Exception as exception:
-            raise LoggerException(f'_save_to_db {exception = }')
+            raise Exception(f'_save_to_db {exception = }')
 
     def start(self) -> None:
         if not self.listener.is_alive():
@@ -112,18 +112,18 @@ class Logger:
             self._save_to_db()
             print('Session ended.')
         else:
-            raise LoggerException('Logging is not in session.')
+            raise Exception('Logging is not in session.')
 
     def pause(self) -> None:
         if self.listener.is_alive():
             self.is_paused = True
             print('Session paused...')
         else:
-            raise LoggerException('Logging is not in session.')
+            raise Exception('Logging is not in session.')
 
     def resume(self) -> None:
         if self.listener.is_alive():
             self.is_paused = False
             print('Session resumed...')
         else:
-            raise LoggerException('Logging is not in session.')
+            raise Exception('Logging is not in session.')

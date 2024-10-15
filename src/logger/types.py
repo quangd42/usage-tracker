@@ -28,7 +28,3 @@ class LoggedKey:
     mods: list[kb.Key | kb.KeyCode] = field(default_factory=list)
     time: datetime = datetime.now()
     is_letter: bool = True
-
-
-class LoggerException(Exception):
-    pass

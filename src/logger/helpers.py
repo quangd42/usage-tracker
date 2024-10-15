@@ -14,6 +14,9 @@ def calc_skipgrams(log_1gram: list[LoggedKey]) -> dict[str, float]:
     skipgram: dict[str, float] = {}
 
     for logged_key in log_1gram:
+        # For now, simply skip special keys, and count mistyped key as correct.
+        if not logged_key.is_letter:
+            continue
         key_name = logged_key.name
         # Go through last_chars, add weight of skipgram
         # `current_key+last_char` to the dict
