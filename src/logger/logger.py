@@ -3,7 +3,7 @@ from datetime import datetime
 from pynput import keyboard as kb
 
 from db.queries import DatabaseQueries
-from logger.types import MODIFIERS, LoggedKey
+from models.logger import MODIFIERS, LoggedKey
 
 
 class Logger:

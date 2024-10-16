@@ -1,8 +1,10 @@
+from models.genkey import GenkeyOutput
+
 import click
 from tabulate import tabulate
 
-from cli.corpus_json import GenkeyOutput, create_genkey_json, save_to_json
-from cli.helpers import print_session_list, prompt_for_session
+from cli.corpus_json import save_to_json
+from cli.helpers import print_session_list
 from db.queries import DatabaseQueries
 from logger.logger import Logger
 
@@ -19,7 +21,6 @@ def cli() -> None:
 
 
 @cli.command()
-# TODO: default option to use the last session
 @click.option('-n', '--name', help='Start a session with provided name.')
 def run(name: str) -> None:
     """Start the logger with the provided session name.
@@ -61,7 +62,7 @@ def run(name: str) -> None:
             if command == '.rse':
                 logger.resume()
         except Exception as e:
-            raise click.ClickException(f'error: {e}')
+            raise click.ClickException(f'Error: {e}')
 
 
 @cli.command()
@@ -84,13 +85,16 @@ def run(name: str) -> None:
 def view(session: str, ngrams_name: str, limit: int, sort_by: str) -> None:
     """View the stats of the logged keys of provided session name.
 
-    Valid stat names are 'letters', 'bigrams', 'trigrams', 'skipgrams'."""
+    Valid stat names are 'letters', 'bigrams', 'trigrams', 'skipgrams'.
+
+    Default limit is 20. Set limit -1 to see all ngrams.
+    """
 
     db = DatabaseQueries(DB_NAME)
     sessions = db.list_sessions()
     if session not in sessions:
         print_session_list(sessions)
-        raise click.ClickException('Exception: Session does not exist.')
+        raise click.ClickException('Session does not exist.')
 
     stat = db.get_stats(
         session=session,
@@ -128,17 +132,16 @@ def delete(session: str) -> None:
         raise click.ClickException(f'{e}')
 
 
-# TODO: when exporting to genkey, handle shifted symbols, i.e. ? -> /
 @cli.command()
+@click.argument('session')
 # Support genkey only for now so "g" is the only option
 # @click.option("-f", "--format", default="g", help="Format for consuming analyzers")
-def save() -> None:
+def export(session: str) -> None:
     """Save logged keys to corpus json, default in genkey corput format."""
 
     db = DatabaseQueries(DB_NAME)
-    session = prompt_for_session(db)
 
-    data = create_genkey_json(DB_NAME, session)
+    data = db.get_genkey_stats(session)
     save_to_json(data)
 
 

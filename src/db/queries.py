@@ -1,9 +1,9 @@
 import sqlite3
+from models.genkey import GenkeyOutput
+from models.logger import LoggedKey
 from typing import Any
 
-from cli.corpus_json import GenkeyOutput
 from logger.helpers import calc_skipgrams
-from logger.types import LoggedKey
 
 
 class DatabaseQueries:
@@ -82,7 +82,6 @@ class DatabaseQueries:
     def save_log_trigrams(self, log: list[LoggedKey], session_name: str) -> None:
         self.save_log_ngrams('trigrams', log, session_name)
 
-    # TODO: remove special keys from skipgrams
     def save_log_skipgram(self, log: list[LoggedKey], session_name: str) -> None:
         cur = self.conn.cursor()
         skipgrams = calc_skipgrams(log)
@@ -103,8 +102,8 @@ class DatabaseQueries:
                 )
 
     def get_stats(
-        self, session: str, stat_name: str, sort_by: str, limit: int
-    ) -> list[tuple[str, str]]:
+        self, session: str, stat_name: str, sort_by: str, limit: int = -1
+    ) -> list[tuple[str, Any]]:
         cur = self.conn.cursor()
         stat: list[Any] = []
         query: str = ''
@@ -184,3 +183,19 @@ class DatabaseQueries:
 
         except Exception as e:
             raise Exception(f'Error deleting session: {e}')
+
+    def get_genkey_stats(self, session: str) -> GenkeyOutput:
+        letters = self.get_stats(session=session, stat_name='letters', sort_by='name')
+        bigrams = self.get_stats(session=session, stat_name='bigrams', sort_by='name')
+        trigrams = self.get_stats(session=session, stat_name='trigrams', sort_by='name')
+        skipgrams = self.get_stats(
+            session=session, stat_name='skipgrams', sort_by='name'
+        )
+
+        # NOTE: the first item is the header
+        return GenkeyOutput(
+            dict(letters[1:]),
+            dict(bigrams[1:]),
+            dict(trigrams[1:]),
+            dict(skipgrams[1:]),
+        )
