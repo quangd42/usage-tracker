@@ -1,3 +1,5 @@
+from pynput import keyboard as kb
+
 from models.logger import LoggedKey
 
 

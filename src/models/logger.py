@@ -5,8 +5,8 @@ from pynput import keyboard as kb
 
 MODIFIERS: set[kb.KeyCode] = set(
     [
-        kb.Key.alt_gr,
         kb.Key.alt,
+        kb.Key.alt_gr,
         kb.Key.alt_l,
         kb.Key.alt_r,
         kb.Key.cmd,
@@ -25,7 +25,7 @@ MODIFIERS: set[kb.KeyCode] = set(
 @dataclass
 class LoggedKey:
     name: str
-    mods: list[kb.Key | kb.KeyCode] = field(default_factory=list)
+    mods: list[kb.KeyCode] = field(default_factory=list)
     time: datetime = datetime.now()
     is_letter: bool = True
 

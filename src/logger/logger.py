@@ -3,7 +3,7 @@ from datetime import datetime
 from pynput import keyboard as kb
 
 from db.queries import DatabaseQueries
-from models.logger import MODIFIERS, LoggedKey
+from models.logger import MODIFIERS, LoggedKey, Ngram
 
 
 class Logger:
@@ -14,7 +14,7 @@ class Logger:
         self.log_letters: list[LoggedKey] = []
         self.log_bigrams: list[LoggedKey] = []
         self.log_trigrams: list[LoggedKey] = []
-        self.pressed_mods: set[kb.Key | kb.KeyCode] = set()
+        self.pressed_mods: set[kb.KeyCode] = set()
         self.last_saved: datetime
         self.session_name: str = session
         self.is_paused: bool = False
@@ -25,10 +25,10 @@ class Logger:
         if not key or self.is_paused:
             return
 
-        # If modifier, add to mods
-        if key in MODIFIERS:
-            self.pressed_mods.add(self.listener.canonical(key))
-            return
+            # If modifier, add to mods
+            if key in MODIFIERS:
+                self.pressed_mods.add(self.normalize_mod(key))
+                return
 
         # If function keys
         if isinstance(key, kb.Key):
@@ -56,7 +56,21 @@ class Logger:
 
     def _on_release(self, key: kb.Key | kb.KeyCode | None) -> None:
         if key in MODIFIERS:
-            self.pressed_mods.remove(self.listener.canonical(key))
+            self.pressed_mods.remove(self.normalize_mod(key))
+
+    @classmethod
+    def normalize_mod(cls, mod: kb.KeyCode) -> kb.KeyCode:
+        if isinstance(mod, kb.Key):
+            match str(mod.name):
+                case 'cmd' | 'cmd_l' | 'cmd_r':
+                    return kb.Key.cmd
+                case 'ctrl' | 'ctrl_l' | 'ctrl_r':
+                    return kb.Key.ctrl
+                case 'alt' | 'alt_gr' | 'alt_l' | 'alt_r':
+                    return kb.Key.alt
+                case 'shift' | 'shift_l' | 'shift_r':
+                    return kb.Key.shift
+        return mod
 
     def _log_ngram(self, current_key: LoggedKey) -> None:
         # If this is first keypress, no bigram

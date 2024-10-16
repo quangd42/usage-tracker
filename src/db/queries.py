@@ -1,9 +1,9 @@
 import sqlite3
-from models.genkey import GenkeyOutput
-from models.logger import LoggedKey
 from typing import Any
 
 from logger.helpers import calc_skipgrams
+from models.genkey import GenkeyOutput
+from models.logger import LoggedKey
 
 
 class DatabaseQueries:
@@ -11,7 +11,6 @@ class DatabaseQueries:
         self.conn = sqlite3.connect(db_path)
         self._db_init()
 
-    # TODO: add table for mods, connect with letters
     def _db_init(self) -> None:
         cur = self.conn.cursor()
         try:
@@ -21,6 +20,7 @@ class DatabaseQueries:
                     name TEXT,
                     timestamp TIMESTAMP,
                     is_letter INT,
+                    mods TEXT,
                     session TEXT
                 );
 
@@ -56,12 +56,18 @@ class DatabaseQueries:
     def save_log_letters(self, log: list[LoggedKey], session_name: str) -> None:
         cur = self.conn.cursor()
         for item in log:
+            try:
+                mod_names = [mod.name for mod in item.mods]  # pyright: ignore[reportAttributeAccessIssue]
+            except AttributeError:
+                raise Exception('Mod is not kb.Key')
+            mods = ','.join(sorted(mod_names))
             cur.execute(
-                'INSERT INTO letters VALUES (NULL, ?, ?, ?, ?)',
+                'INSERT INTO letters VALUES (NULL, ?, ?, ?, ?, ?)',
                 (
                     item.name,
                     item.time,
                     item.is_letter,
+                    mods,
                     session_name,
                 ),
             )
@@ -136,7 +142,7 @@ class DatabaseQueries:
                         """
             case 'skipgrams':
                 query = f"""
-                        SELECT name, weight FROM skipgrams 
+                        SELECT name, weight FROM skipgrams
                         WHERE session = ?
                         ORDER BY {sort_key}
                         LIMIT ?
