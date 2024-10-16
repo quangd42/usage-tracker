@@ -2,7 +2,7 @@ import click
 from tabulate import tabulate
 
 from cli.corpus_json import GenkeyOutput, create_genkey_json, save_to_json
-from cli.helpers import print_session_list
+from cli.helpers import print_session_list, prompt_for_session
 from db.queries import DatabaseQueries
 from logger.logger import Logger
 
@@ -103,6 +103,31 @@ def view(session: str, ngrams_name: str, limit: int, sort_by: str) -> None:
     click.echo(tabulate(stat, headers='firstrow', tablefmt='rounded_outline'))
 
 
+@cli.command()
+def list() -> None:
+    """List logged sessions by name."""
+
+    db = DatabaseQueries(DB_NAME)
+    session_list = db.list_sessions()
+    print_session_list(session_list)
+
+
+@cli.command()
+@click.argument('session')
+def delete(session: str) -> None:
+    """Delete a logged sessions by name."""
+
+    db = DatabaseQueries(DB_NAME)
+
+    try:
+        db.delete_session(session)
+        db.conn.commit()
+        session_list = db.list_sessions()
+        print_session_list(session_list)
+    except Exception as e:
+        raise click.ClickException(f'{e}')
+
+
 # TODO: when exporting to genkey, handle shifted symbols, i.e. ? -> /
 @cli.command()
 # Support genkey only for now so "g" is the only option
@@ -111,25 +136,10 @@ def save() -> None:
     """Save logged keys to corpus json, default in genkey corput format."""
 
     db = DatabaseQueries(DB_NAME)
-    session_list = db.list_sessions()
-    print_session_list(session_list)
-    session = click.prompt(
-        'Choose session',
-        type=click.Choice(session_list, case_sensitive=False),
-        show_choices=False,
-    )
+    session = prompt_for_session(db)
 
     data = create_genkey_json(DB_NAME, session)
     save_to_json(data)
-
-
-@cli.command()
-def list() -> None:
-    """List logged sessions by name."""
-
-    db = DatabaseQueries(DB_NAME)
-    session_list = db.list_sessions()
-    print_session_list(session_list)
 
 
 if __name__ == '__main__':

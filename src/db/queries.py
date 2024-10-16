@@ -1,6 +1,7 @@
 import sqlite3
 from typing import Any
 
+from cli.corpus_json import GenkeyOutput
 from logger.helpers import calc_skipgrams
 from logger.types import LoggedKey
 
@@ -168,3 +169,18 @@ class DatabaseQueries:
         except Exception:
             raise Exception('No saved sessions.')
         return [session[0] for session in res]
+
+    def delete_session(self, session: str) -> None:
+        cur = self.conn.cursor()
+
+        stat_names = GenkeyOutput.list_keys()
+        try:
+            for stat_name in stat_names:
+                query = f"""
+                        DELETE FROM {stat_name}
+                        WHERE session = ?
+                    """
+                cur.execute(query, (session,))
+
+        except Exception as e:
+            raise Exception(f'Error deleting session: {e}')
