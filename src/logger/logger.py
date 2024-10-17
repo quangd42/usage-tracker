@@ -31,7 +31,7 @@ class Logger:
                 self.pressed_mods.add(self.normalize_mod(key))
                 return
 
-            current_key = LoggedKey(key, self.pressed_mods)
+            current_key = LoggedKey(key=key, mods=self.pressed_mods.copy())
         except Exception as e:
             print(e)
             return
@@ -52,8 +52,12 @@ class Logger:
             self.log_trigrams.clear()
 
     def _on_release(self, key: kb.Key | kb.KeyCode | None) -> None:
-        if key in MODIFIERS:
-            self.pressed_mods.remove(self.normalize_mod(key))
+        try:
+            if key in MODIFIERS:
+                self.pressed_mods.remove(self.normalize_mod(key))
+        except Exception as e:
+            print(e)
+            return
 
     @classmethod
     def normalize_mod(cls, mod: kb.KeyCode) -> kb.KeyCode:

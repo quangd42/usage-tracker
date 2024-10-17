@@ -47,6 +47,7 @@ def run(name: str) -> None:
     '.pse': Pause logging.
     '.rse': Resume logging.
     '.end': Stop logging and save to db.
+    When executed these commands are not logged.
     """)
     click.echo(
         f'Started session {click.style(name, italic=True, bold=True)}. Listening to all keystrokes...'

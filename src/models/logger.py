@@ -26,8 +26,8 @@ MODIFIERS: set[kb.KeyCode] = set(
 @dataclass
 class LoggedKey:
     key: kb.Key | kb.KeyCode
-    mods: set[kb.KeyCode] = field(default_factory=set)
-    time: datetime = datetime.now()
+    mods: set[kb.KeyCode]
+    time: datetime = field(default_factory=datetime.now)
     name: str = field(init=False)
     is_letter: bool = field(init=False)
 
