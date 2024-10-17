@@ -10,6 +10,10 @@ or optimize your workflow.
 Currently supports [genkey](https://github.com/semilin/genkey).
 Support for other analyzers such as Oxeylyzer to come.
 
+<img width="667" alt="image" src="https://github.com/user-attachments/assets/1f4fc03b-2ce2-4552-a6af-ff96a2c5a078">
+<img width="757" alt="image" src="https://github.com/user-attachments/assets/b1d16057-677f-4e03-acf2-b2dd94193cac">
+
+
 ## Table of contents
 
 <!-- toc -->
