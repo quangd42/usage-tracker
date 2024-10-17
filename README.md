@@ -32,7 +32,7 @@ This CLI requires Python 3.12+
 To start just clone the repo and cd into the project folder.
 
 ```sh
-git clone https://github.com/ammon134/usage-tracker
+git clone https://github.com/quangd42/usage-tracker
 cd usage-tracker
 ```
 
