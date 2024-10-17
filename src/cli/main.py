@@ -30,11 +30,14 @@ def run(name: str) -> None:
     if not name:
         session_list = db.list_sessions()
         print_session_list(session_list)
-        name = click.prompt(
-            'Choose from existing session or type "new" for new session',
-            type=click.Choice(session_list + ['new'], case_sensitive=False),
-            show_choices=False,
-        )
+        if len(session_list) > 0:
+            name = click.prompt(
+                'Choose from existing session or type "new" for new session',
+                type=click.Choice(session_list + ['new'], case_sensitive=False),
+                show_choices=False,
+            )
+        else:
+            name = 'new'
         if name == 'new':
             name = click.prompt('New session name')
 
@@ -103,7 +106,6 @@ def run(name: str) -> None:
     default=False,
     help='Convenient flags for both --with_mods and --special_keys.',
 )
-# TODO: allow a way to view non-letters keypresses as well. perhaps with a diferent flag or command altogether
 def view(
     session: str,
     ngrams_name: str,

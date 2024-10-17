@@ -5,15 +5,18 @@ from db.queries import DatabaseQueries
 
 
 def print_session_list(sessions: list[str]) -> None:
-    click.echo('Existing session/s:')
-    click.echo(
-        tabulate(
-            enumerate(sessions),
-            headers=['no', 'session'],
-            tablefmt='rounded_outline',
-            showindex=False,
+    if len(sessions) > 0:
+        click.echo('Existing session/s:')
+        click.echo(
+            tabulate(
+                enumerate(sessions),
+                headers=['no', 'session'],
+                tablefmt='rounded_outline',
+                showindex=False,
+            )
         )
-    )
+    else:
+        click.echo('No recorded session.')
 
 
 def prompt_for_session(db: DatabaseQueries) -> str:
