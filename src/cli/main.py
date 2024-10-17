@@ -72,7 +72,7 @@ def run(name: str) -> None:
     '-n',
     type=click.Choice(GENKEY_KEYS, case_sensitive=False),
     prompt=True,
-    help='Ngram name to view',
+    help='Ngram name to view.',
 )
 @click.option('--limit', '-l', default=20, help='Number of top ngrams to view.')
 @click.option(
@@ -83,16 +83,41 @@ def run(name: str) -> None:
     help='Sort results by name or value.',
 )
 @click.option(
-    '--with_mods', '-m', is_flag=True, help='Show modifiers recorded with letters'
+    '--with_mods',
+    '-m',
+    is_flag=True,
+    default=False,
+    help='Show modifiers recorded with letters.',
 )
+@click.option(
+    '--special_keys',
+    '-s',
+    is_flag=True,
+    default=False,
+    help='Show all special keys recorded such as <space>, <enter>.',
+)
+@click.option(
+    '--all',
+    '-a',
+    is_flag=True,
+    default=False,
+    help='Convenient flags for both --with_mods and --special_keys.',
+)
+# TODO: allow a way to view non-letters keypresses as well. perhaps with a diferent flag or command altogether
 def view(
-    session: str, ngrams_name: str, limit: int, sort_by: str, with_mods: bool
+    session: str,
+    ngrams_name: str,
+    limit: int,
+    sort_by: str,
+    with_mods: bool,
+    special_keys: bool,
+    all: bool,
 ) -> None:
     """View the stats of the logged keys of provided session name.
 
     Valid stat names are 'letters', 'bigrams', 'trigrams', 'skipgrams'.
 
-    Default limit is 20. Set limit -1 to see all ngrams.
+    Default limit is 20. Set limit -1 to see all available records.
     """
 
     db = DatabaseQueries(DB_NAME)
@@ -101,8 +126,12 @@ def view(
         print_session_list(sessions)
         raise click.ClickException('Session does not exist.')
 
-    if with_mods and ngrams_name != 'letters':
-        raise click.ClickException('Mods are only recorded with letters.')
+    if all:
+        with_mods = True
+        special_keys = True
+
+    if (with_mods or special_keys) and ngrams_name != 'letters':
+        raise click.ClickException('Mods or special keys are only recorded in letters.')
 
     stat = db.get_stats(
         session=session,
@@ -110,6 +139,7 @@ def view(
         limit=limit,
         sort_by=sort_by,
         with_mods=with_mods,
+        special_keys=special_keys,
     )
     click.echo(f'Session: {session}')
     click.echo(f'Ngram: {ngrams_name}')

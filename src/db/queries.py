@@ -115,6 +115,7 @@ class DatabaseQueries:
         sort_by: str,
         limit: int = -1,
         with_mods: bool = False,
+        special_keys: bool = False,
     ) -> list[tuple[str, Any]]:
         cur = self.conn.cursor()
         stat: list[Any] = []
@@ -129,11 +130,15 @@ class DatabaseQueries:
 
         match stat_name:
             case 'letters':
+                if special_keys:
+                    is_letter = ''
+                else:
+                    is_letter = ' AND is_letter = 1'
                 if with_mods:
                     query = f"""
                                 SELECT name, count(name) as freq, mods
                                 FROM letters
-                                WHERE session = ? AND is_letter = 1
+                                WHERE session = ?{is_letter}
                                 GROUP BY name, mods
                                 ORDER BY {sort_key}
                                 LIMIT ?
@@ -142,7 +147,7 @@ class DatabaseQueries:
                     query = f"""
                                 SELECT name, count(name) as freq
                                 FROM letters
-                                WHERE session = ? AND is_letter = 1
+                                WHERE session = ?{is_letter}
                                 GROUP BY name
                                 ORDER BY {sort_key}
                                 LIMIT ?
