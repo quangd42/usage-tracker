@@ -63,7 +63,7 @@ In MacOS, you will have to give the terminal appropriate access.
 - [x] All keypresses are logged into unigrams, diagrams, trigrams and skipgrams.
       (Skipgrams in genkey's logic for now).
 - [x] View command to peak at the logged stats so far.
-- [x] Save command to output corpus json file in genkey format.
+- [x] Export command to output corpus json file in genkey format.
 - [x] Logging are saved into sessions.
 
 ## Development
@@ -77,7 +77,7 @@ source .cli_venv/bin/activate
 pip install -r requirements.txt
 ```
 
-For local development, install with --editable flag.
+Install with --editable flag allows the latest changes to apply without rebuilding.
 
 ```sh
 pip install -e .
