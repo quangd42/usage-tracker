@@ -25,19 +25,16 @@ class Logger:
         if not key or self.is_paused:
             return
 
+        try:
             # If modifier, add to mods
             if key in MODIFIERS:
                 self.pressed_mods.add(self.normalize_mod(key))
                 return
 
-        # If function keys
-        if isinstance(key, kb.Key):
-            current_key = LoggedKey(
-                name=f'<{str(key.name)}>', mods=list(self.pressed_mods), is_letter=False
-            )
-        else:
-            can_key = self.listener.canonical(key)
-            current_key = LoggedKey(name=can_key.char, mods=list(self.pressed_mods))  # type: ignore
+            current_key = LoggedKey(key, self.pressed_mods)
+        except Exception as e:
+            print(e)
+            return
 
         # Try to log bigram and trigram
         self._log_ngram(current_key)
