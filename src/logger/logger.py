@@ -1,85 +1,43 @@
-import sqlite3
 from datetime import datetime
 
-from pynput import keyboard
+from pynput import keyboard as kb
 
-from .helpers import calc_skipgrams
-from .types import LoggedKey, LoggerException
-
-DB_NAME = "logger.db"
+from db.queries import DatabaseQueries
+from models.logger import MODIFIERS, LoggedKey, Ngram
 
 
 class Logger:
-    def __init__(self, session: str) -> None:
-        self.listener: keyboard.Listener = keyboard.Listener(on_press=self.__on_press)
+    def __init__(self, queries: DatabaseQueries, session: str) -> None:
+        self.listener: kb.Listener = kb.Listener(
+            on_press=self._on_press, on_release=self._on_release
+        )
         self.log_letters: list[LoggedKey] = []
-        self.log_bigrams: list[LoggedKey] = []
-        self.log_trigrams: list[LoggedKey] = []
+        self.log_bigrams: list[Ngram] = []
+        self.log_trigrams: list[Ngram] = []
+        self.pressed_mods: set[kb.KeyCode] = set()
         self.last_saved: datetime
         self.session_name: str = session
         self.is_paused: bool = False
+        self.db = queries
 
-    def __on_press(self, key) -> None:
+    def _on_press(self, key: kb.Key | kb.KeyCode | None) -> None:
         # Ignore when logger is paused
-        if self.is_paused:
+        if not key or self.is_paused:
             return
 
-        # Guard clause for special keys
-        if isinstance(key, keyboard.Key):
-            match key:
-                case keyboard.Key.space:
-                    key_str = "<space>"
-                case keyboard.Key.down:
-                    key_str = "<down>"
-                case keyboard.Key.left:
-                    key_str = "<left>"
-                case keyboard.Key.right:
-                    key_str = "<right>"
-                case keyboard.Key.up:
-                    key_str = "<up>"
-                case keyboard.Key.esc:
-                    key_str = "<esc>"
-                case keyboard.Key.tab:
-                    key_str = "<tab>"
-                case _:
-                    key_str = ""
-            current_key = LoggedKey(key_str, is_letter=False)
-        else:
-            key_str = key.char
-            current_key = LoggedKey(key_str)
-
         try:
-            # If last keypress is not letter, then no 2gram or 3gram
-            last_key = self.log_letters[-1]
-            if not last_key.is_letter or not current_key.is_letter:
-                raise Exception
+            # If modifier, add to mods
+            if key in MODIFIERS:
+                self.pressed_mods.add(self.normalize_mod(key))
+                return
 
-            # If current keypress is within 1 second of the last then log 2gram
-            last_key_elapsed = current_key.time - last_key.time
-            if last_key_elapsed.total_seconds() <= 1:
-                self.log_bigrams.append(
-                    LoggedKey(name=last_key.name + current_key.name)
-                )
+            current_key = LoggedKey(key=key, mods=self.pressed_mods.copy())
+        except Exception as e:
+            print(e)
+            return
 
-            # If keypress before last is not letter, then no 3gram
-            before_last_key = self.log_letters[-2]
-            if not before_last_key.is_letter:
-                raise Exception
-
-            # If current keypress is within 2 seconds of keypress before last then log 3gram
-            bf_last_key_elapsed = current_key.time - before_last_key.time
-            if bf_last_key_elapsed.total_seconds() <= 2:
-                self.log_trigrams.append(
-                    LoggedKey(
-                        name=before_last_key.name + last_key.name + current_key.name,
-                    )
-                )
-
-        # If current key is the first or second keypress ever, just ignore
-        except IndexError:
-            pass
-        except Exception:
-            pass
+        # Try to log bigram and trigram
+        self._log_ngram(current_key)
 
         # Finally, log current key to 1gram always
         self.log_letters.append(current_key)
@@ -88,108 +46,108 @@ class Logger:
         current_interval = current_key.time - self.last_saved
         if current_interval.total_seconds() >= 60:
             self.last_saved = datetime.now()
-            self.__save_to_db(DB_NAME)
+            self._save_to_db()
             self.log_letters.clear()
             self.log_bigrams.clear()
             self.log_trigrams.clear()
 
-    def __db_init(self, db_name) -> None:
+    def _on_release(self, key: kb.Key | kb.KeyCode | None) -> None:
         try:
-            con = sqlite3.connect(db_name)
-            cur = con.cursor()
+            if key in MODIFIERS:
+                self.pressed_mods.remove(self.normalize_mod(key))
+        except Exception as e:
+            print(e)
+            return
 
-            cur.execute(
-                "CREATE TABLE IF NOT EXISTS letters (id integer PRIMARY KEY, name, freq, session);"
+    @classmethod
+    def normalize_mod(cls, mod: kb.KeyCode) -> kb.KeyCode:
+        if isinstance(mod, kb.Key):
+            match str(mod.name):
+                case 'cmd' | 'cmd_l' | 'cmd_r':
+                    return kb.Key.cmd
+                case 'ctrl' | 'ctrl_l' | 'ctrl_r':
+                    return kb.Key.ctrl
+                case 'alt' | 'alt_gr' | 'alt_l' | 'alt_r':
+                    return kb.Key.alt
+                case 'shift' | 'shift_l' | 'shift_r':
+                    return kb.Key.shift
+        return mod
+
+    def _log_ngram(self, current_key: LoggedKey) -> None:
+        # If this is first keypress, no bigram
+        if len(self.log_letters) == 0:
+            return
+        last_key = self.log_letters[-1]
+        if not last_key.is_letter or not current_key.is_letter:
+            return
+
+        # If current keypress is within 1 second of the last then log 2gram
+        last_key_elapsed = current_key.time - last_key.time
+        if last_key_elapsed.total_seconds() <= 1:
+            self.log_bigrams.append(Ngram(name=last_key.name + current_key.name))
+
+        # Needs at least 2 previous keys to assess trigrams
+        if len(self.log_letters) < 2:
+            return
+        # If keypress before last is not letter, then no 3gram
+        before_last_key = self.log_letters[-2]
+        if not before_last_key.is_letter:
+            return
+
+        # If current keypress is within 2 seconds of keypress before last then log 3gram
+        bf_last_key_elapsed = current_key.time - before_last_key.time
+        if bf_last_key_elapsed.total_seconds() <= 2:
+            self.log_trigrams.append(
+                Ngram(
+                    name=before_last_key.name + last_key.name + current_key.name,
+                )
             )
-            cur.execute(
-                "CREATE TABLE IF NOT EXISTS bigrams (id integer PRIMARY KEY, name, freq, session);"
-            )
-            cur.execute(
-                "CREATE TABLE IF NOT EXISTS trigrams (id integer PRIMARY KEY, name, freq, session);"
-            )
-            cur.execute(
-                "CREATE TABLE IF NOT EXISTS skipgrams (id integer PRIMARY KEY, name, weight, session);"
-            )
-            con.close()
+
+    def _save_to_db(self, end_logging: bool = False) -> None:
+        try:
+            if end_logging:
+                self.db.save_log_letters(self.log_letters[:-5], self.session_name)
+                self.db.save_log_bigrams(self.log_bigrams[:-5], self.session_name)
+                self.db.save_log_trigrams(self.log_trigrams[:-5], self.session_name)
+                self.db.save_log_skipgram(self.log_letters[:-5], self.session_name)
+            else:
+                self.db.save_log_letters(self.log_letters, self.session_name)
+                self.db.save_log_bigrams(self.log_bigrams, self.session_name)
+                self.db.save_log_trigrams(self.log_trigrams, self.session_name)
+                self.db.save_log_skipgram(self.log_letters, self.session_name)
+            self.db.conn.commit()
 
         except Exception as exception:
-            raise LoggerException(f"__db_init exception: {exception}")
-
-    def __save_to_db(self, db_name) -> None:
-        try:
-            con = sqlite3.connect(db_name)
-            cur = con.cursor()
-            logs = {
-                "letters": self.log_letters,
-                "bigrams": self.log_bigrams,
-                "trigrams": self.log_trigrams,
-            }
-            for log_name in logs:
-                for item in logs[log_name]:
-                    name = item.name
-                    res = cur.execute(
-                        f"SELECT id FROM {log_name} WHERE name = ? AND session = ?",
-                        (name, self.session_name),
-                    ).fetchone()
-                    if res is None:
-                        cur.execute(
-                            f"INSERT INTO {log_name} VALUES(NULL, ?, ?, ?)",
-                            (name, 1, self.session_name),
-                        )
-                    else:
-                        cur.execute(
-                            f"UPDATE {log_name} SET freq = freq + 1 WHERE id = ?",
-                            (res[0],),
-                        )
-            skipgrams = calc_skipgrams(self.log_letters)
-            for key in skipgrams:
-                res = cur.execute(
-                    "SELECT id FROM skipgrams WHERE name = ? AND session = ?",
-                    (key, self.session_name),
-                ).fetchone()
-                if res is None:
-                    cur.execute(
-                        "INSERT INTO skipgrams VALUES(NULL, ?, ?, ?)",
-                        (key, skipgrams[key], self.session_name),
-                    )
-                else:
-                    cur.execute(
-                        "UPDATE skipgrams SET weight = weight + ? WHERE id = ?",
-                        (skipgrams[key], res[0]),
-                    )
-
-            con.commit()
-            con.close()
-
-        except Exception as exception:
-            raise LoggerException(f"__save_to_db {exception = }")
+            raise Exception(f'_save_to_db {exception = }')
 
     def start(self) -> None:
         if not self.listener.is_alive():
             self.last_saved = datetime.now()
             self.listener.start()
             self.listener.wait()
-            self.__db_init(DB_NAME)
 
     def stop(self) -> None:
         if self.listener.is_alive():
             self.end_time = datetime.now()
             self.listener.stop()
-            self.__save_to_db(DB_NAME)
-            print("Session ended.")
+            self._save_to_db(end_logging=True)
+            print('Session ended.')
         else:
-            raise LoggerException("Logging is not in session.")
+            raise Exception('Logging is not in session.')
 
     def pause(self) -> None:
         if self.listener.is_alive():
             self.is_paused = True
-            print("Session paused...")
+            self.log_letters = self.log_letters[:-5]
+            self.log_bigrams = self.log_bigrams[:-5]
+            self.log_trigrams = self.log_trigrams[:-5]
+            print('Session paused...')
         else:
-            raise LoggerException("Logging is not in session.")
+            raise Exception('Logging is not in session.')
 
     def resume(self) -> None:
         if self.listener.is_alive():
             self.is_paused = False
-            print("Session resumed...")
+            print('Session resumed...')
         else:
-            raise LoggerException("Logging is not in session.")
+            raise Exception('Logging is not in session.')

@@ -3,7 +3,7 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "key-logger"
+name = "klgr"
 version = "0.0.1"
 dependencies = ["pynput", "click", "tabulate"]
 
@@ -14,9 +14,9 @@ where = ["src"] # ["."] by default
 # namespaces = false  # true by default
 
 [project.scripts]
-key-logger = "cli.main:cli"
+klgr = "cli.main:cli"
 
 [tool.pyright]
-venv = ".venv"
+venv = ".cli_venv"
 venvPath = "."
 strict = ["/src/**/*"]
