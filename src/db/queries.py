@@ -8,7 +8,8 @@ from models.logger import LoggedKey, Ngram
 
 class DatabaseQueries:
     def __init__(self, db_path: str) -> None:
-        self.conn = sqlite3.connect(db_path)
+        # https://stackoverflow.com/questions/48218065/objects-created-in-a-thread-can-only-be-used-in-that-same-thread
+        self.conn = sqlite3.connect(db_path, check_same_thread=False)
         self._db_init()
 
     def _db_init(self) -> None:
@@ -108,7 +109,12 @@ class DatabaseQueries:
                 )
 
     def get_stats(
-        self, session: str, stat_name: str, sort_by: str, limit: int = -1
+        self,
+        session: str,
+        stat_name: str,
+        sort_by: str,
+        limit: int = -1,
+        with_mods: bool = False,
     ) -> list[tuple[str, Any]]:
         cur = self.conn.cursor()
         stat: list[Any] = []
@@ -123,14 +129,24 @@ class DatabaseQueries:
 
         match stat_name:
             case 'letters':
-                query = f"""
-                            SELECT name, count(name) as freq
-                            FROM letters
-                            WHERE session = ? AND is_letter = 1
-                            GROUP BY name
-                            ORDER BY {sort_key}
-                            LIMIT ?
-                        """
+                if with_mods:
+                    query = f"""
+                                SELECT name, count(name) as freq, mods
+                                FROM letters
+                                WHERE session = ? AND is_letter = 1
+                                GROUP BY name, mods
+                                ORDER BY {sort_key}
+                                LIMIT ?
+                            """
+                else:
+                    query = f"""
+                                SELECT name, count(name) as freq
+                                FROM letters
+                                WHERE session = ? AND is_letter = 1
+                                GROUP BY name
+                                ORDER BY {sort_key}
+                                LIMIT ?
+                            """
             case 'bigrams' | 'trigrams':
                 query = f"""
                             SELECT name, count(name) as freq

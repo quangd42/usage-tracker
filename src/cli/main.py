@@ -1,5 +1,3 @@
-from models.genkey import GenkeyOutput
-
 import click
 from tabulate import tabulate
 
@@ -7,6 +5,7 @@ from cli.corpus_json import save_to_json
 from cli.helpers import print_session_list
 from db.queries import DatabaseQueries
 from logger.logger import Logger
+from models.genkey import GenkeyOutput
 
 GENKEY_KEYS = GenkeyOutput.list_keys()
 DB_NAME = 'logger.db'
@@ -83,7 +82,12 @@ def run(name: str) -> None:
     type=click.Choice(['name', 'value']),
     help='Sort results by name or value.',
 )
-def view(session: str, ngrams_name: str, limit: int, sort_by: str) -> None:
+@click.option(
+    '--with_mods', '-m', is_flag=True, help='Show modifiers recorded with letters'
+)
+def view(
+    session: str, ngrams_name: str, limit: int, sort_by: str, with_mods: bool
+) -> None:
     """View the stats of the logged keys of provided session name.
 
     Valid stat names are 'letters', 'bigrams', 'trigrams', 'skipgrams'.
@@ -97,11 +101,15 @@ def view(session: str, ngrams_name: str, limit: int, sort_by: str) -> None:
         print_session_list(sessions)
         raise click.ClickException('Session does not exist.')
 
+    if with_mods and ngrams_name != 'letters':
+        raise click.ClickException('Mods are only recorded with letters.')
+
     stat = db.get_stats(
         session=session,
         stat_name=ngrams_name,
         limit=limit,
         sort_by=sort_by,
+        with_mods=with_mods,
     )
     click.echo(f'Session: {session}')
     click.echo(f'Ngram: {ngrams_name}')
