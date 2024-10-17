@@ -103,12 +103,18 @@ class Logger:
                 )
             )
 
-    def _save_to_db(self) -> None:
+    def _save_to_db(self, end_logging: bool = False) -> None:
         try:
-            self.db.save_log_letters(self.log_letters, self.session_name)
-            self.db.save_log_bigrams(self.log_bigrams, self.session_name)
-            self.db.save_log_trigrams(self.log_trigrams, self.session_name)
-            self.db.save_log_skipgram(self.log_letters, self.session_name)
+            if end_logging:
+                self.db.save_log_letters(self.log_letters[:-5], self.session_name)
+                self.db.save_log_bigrams(self.log_bigrams[:-5], self.session_name)
+                self.db.save_log_trigrams(self.log_trigrams[:-5], self.session_name)
+                self.db.save_log_skipgram(self.log_letters[:-5], self.session_name)
+            else:
+                self.db.save_log_letters(self.log_letters, self.session_name)
+                self.db.save_log_bigrams(self.log_bigrams, self.session_name)
+                self.db.save_log_trigrams(self.log_trigrams, self.session_name)
+                self.db.save_log_skipgram(self.log_letters, self.session_name)
             self.db.conn.commit()
 
         except Exception as exception:
@@ -124,7 +130,7 @@ class Logger:
         if self.listener.is_alive():
             self.end_time = datetime.now()
             self.listener.stop()
-            self._save_to_db()
+            self._save_to_db(end_logging=True)
             print('Session ended.')
         else:
             raise Exception('Logging is not in session.')
