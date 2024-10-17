@@ -12,8 +12,8 @@ class Logger:
             on_press=self._on_press, on_release=self._on_release
         )
         self.log_letters: list[LoggedKey] = []
-        self.log_bigrams: list[LoggedKey] = []
-        self.log_trigrams: list[LoggedKey] = []
+        self.log_bigrams: list[Ngram] = []
+        self.log_trigrams: list[Ngram] = []
         self.pressed_mods: set[kb.KeyCode] = set()
         self.last_saved: datetime
         self.session_name: str = session
@@ -83,7 +83,7 @@ class Logger:
         # If current keypress is within 1 second of the last then log 2gram
         last_key_elapsed = current_key.time - last_key.time
         if last_key_elapsed.total_seconds() <= 1:
-            self.log_bigrams.append(LoggedKey(name=last_key.name + current_key.name))
+            self.log_bigrams.append(Ngram(name=last_key.name + current_key.name))
 
         # Needs at least 2 previous keys to assess trigrams
         if len(self.log_letters) < 2:
@@ -97,7 +97,7 @@ class Logger:
         bf_last_key_elapsed = current_key.time - before_last_key.time
         if bf_last_key_elapsed.total_seconds() <= 2:
             self.log_trigrams.append(
-                LoggedKey(
+                Ngram(
                     name=before_last_key.name + last_key.name + current_key.name,
                 )
             )

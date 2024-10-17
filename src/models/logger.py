@@ -76,3 +76,9 @@ class LoggedKey:
 
     def __post_init__(self) -> None:
         self._normalize_name()
+
+
+@dataclass
+class Ngram:
+    name: str
+    time: datetime = datetime.now()

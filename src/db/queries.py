@@ -3,7 +3,7 @@ from typing import Any
 
 from logger.helpers import calc_skipgrams
 from models.genkey import GenkeyOutput
-from models.logger import LoggedKey
+from models.logger import LoggedKey, Ngram
 
 
 class DatabaseQueries:
@@ -73,7 +73,7 @@ class DatabaseQueries:
             )
 
     def save_log_ngrams(
-        self, log_name: str, log: list[LoggedKey], session_name: str
+        self, log_name: str, log: list[Ngram], session_name: str
     ) -> None:
         cur = self.conn.cursor()
         for item in log:
@@ -82,10 +82,10 @@ class DatabaseQueries:
                 (item.name, item.time, session_name),
             )
 
-    def save_log_bigrams(self, log: list[LoggedKey], session_name: str) -> None:
+    def save_log_bigrams(self, log: list[Ngram], session_name: str) -> None:
         self.save_log_ngrams('bigrams', log, session_name)
 
-    def save_log_trigrams(self, log: list[LoggedKey], session_name: str) -> None:
+    def save_log_trigrams(self, log: list[Ngram], session_name: str) -> None:
         self.save_log_ngrams('trigrams', log, session_name)
 
     def save_log_skipgram(self, log: list[LoggedKey], session_name: str) -> None:
