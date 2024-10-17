@@ -138,6 +138,9 @@ class Logger:
     def pause(self) -> None:
         if self.listener.is_alive():
             self.is_paused = True
+            self.log_letters = self.log_letters[:-5]
+            self.log_bigrams = self.log_bigrams[:-5]
+            self.log_trigrams = self.log_trigrams[:-5]
             print('Session paused...')
         else:
             raise Exception('Logging is not in session.')
