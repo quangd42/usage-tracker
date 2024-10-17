@@ -1,15 +1,16 @@
 from logger.helpers import calc_skipgrams
-from logger.types import LoggedKey
+from models.logger import LoggedKey
+from pynput import keyboard as kb
 
 
 def test_get_skipgram():
     log = [
-        LoggedKey('c'),
-        LoggedKey('r'),
-        LoggedKey('t'),
-        LoggedKey('s'),
-        LoggedKey('c'),
-        LoggedKey('t'),
+        LoggedKey(kb.KeyCode.from_char('c')),
+        LoggedKey(kb.KeyCode.from_char('r')),
+        LoggedKey(kb.KeyCode.from_char('t')),
+        LoggedKey(kb.KeyCode.from_char('s')),
+        LoggedKey(kb.KeyCode.from_char('c')),
+        LoggedKey(kb.KeyCode.from_char('t')),
     ]
 
     weight = []
