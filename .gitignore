@@ -2,7 +2,6 @@
 .cli_venv
 .vscode
 
-rplugin/
 
 /**/__pycache__
 /**/.pytest_cache
