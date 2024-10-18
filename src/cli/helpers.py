@@ -1,7 +1,7 @@
 import click
 from tabulate import tabulate
 
-from db.queries import DatabaseQueries
+from rplugin.python3.usage_tracker.db.queries import DatabaseQueries
 
 
 def print_session_list(sessions: list[str]) -> None:

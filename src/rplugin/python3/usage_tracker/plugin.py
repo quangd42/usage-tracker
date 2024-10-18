@@ -1,6 +1,7 @@
 import pynvim
-from db.queries import DatabaseQueries
-from logger.logger import Logger
+
+from usage_tracker.db.queries import DatabaseQueries
+from usage_tracker.logger.logger import Logger
 
 DB_PATH = 'nvim-log.db'
 
@@ -34,22 +35,31 @@ class LoggerPlugin:
         except Exception as e:
             self.vim.api.notify(f'Logger failed: {e}', 4, {})
 
-    @pynvim.autocmd('VimLeave', pattern='*')
+    @pynvim.autocmd('VimLeavePre', pattern='*')
     def vim_leave_handler(self):
         self.logger.stop()
 
     @pynvim.autocmd('InsertEnter', pattern='*', sync=False)
     def insert_enter_handler(self):
-        self.logger.pause()
+        try:
+            # self.logger.pause()
+            self.vim.api.notify('Logger paused', 2, {})
+        except Exception:
+            pass
 
     @pynvim.autocmd('InsertLeave', pattern='*', sync=False)
     def insert_leave_handler(self):
-        self.logger.resume()
+        try:
+            # self.logger.resume()
+            self.vim.api.notify('Logger resumed', 2, {})
+        except Exception:
+            pass
 
     @pynvim.autocmd('FocusLost', pattern='*', sync=False)
     def vim_focus_lost_handler(self):
         try:
             self.logger.resume()
+            self.vim.api.notify('Logger resumed', 2, {})
         except Exception:
             pass
 

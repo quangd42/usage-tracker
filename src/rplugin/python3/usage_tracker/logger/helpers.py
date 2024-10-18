@@ -1,4 +1,4 @@
-from models.logger import LoggedKey
+from usage_tracker.models.logger import LoggedKey
 
 
 def calc_skipgrams(log_1gram: list[LoggedKey]) -> dict[str, float]:

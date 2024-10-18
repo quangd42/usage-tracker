@@ -1,5 +1,5 @@
-from logger.helpers import calc_skipgrams
-from models.logger import LoggedKey
+from ..logger.helpers import calc_skipgrams
+from ..models.logger import LoggedKey
 from pynput import keyboard as kb
 
 

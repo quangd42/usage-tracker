@@ -3,9 +3,10 @@ from tabulate import tabulate
 
 from cli.corpus_json import save_to_json
 from cli.helpers import print_session_list
-from db.queries import DatabaseQueries
-from logger.logger import Logger
-from models.genkey import GenkeyOutput
+
+from rplugin.python3.usage_tracker.logger.logger import Logger
+from rplugin.python3.usage_tracker.db.queries import DatabaseQueries
+from rplugin.python3.usage_tracker.models.genkey import GenkeyOutput
 
 GENKEY_KEYS = GenkeyOutput.list_keys()
 DB_NAME = 'logger.db'

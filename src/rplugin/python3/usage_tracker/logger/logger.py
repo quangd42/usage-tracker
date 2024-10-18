@@ -2,8 +2,8 @@ from datetime import datetime
 
 from pynput import keyboard as kb
 
-from db.queries import DatabaseQueries
-from models.logger import MODIFIERS, LoggedKey, Ngram
+from usage_tracker.db.queries import DatabaseQueries
+from usage_tracker.models.logger import MODIFIERS, LoggedKey, Ngram
 
 
 class Logger:

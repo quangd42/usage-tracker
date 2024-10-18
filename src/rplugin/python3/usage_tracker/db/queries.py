@@ -1,9 +1,9 @@
 import sqlite3
 from typing import Any
 
-from logger.helpers import calc_skipgrams
-from models.genkey import GenkeyOutput
-from models.logger import LoggedKey, Ngram
+from usage_tracker.logger.helpers import calc_skipgrams
+from usage_tracker.models.genkey import GenkeyOutput
+from usage_tracker.models.logger import LoggedKey, Ngram
 
 
 class DatabaseQueries:
