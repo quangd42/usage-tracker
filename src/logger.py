@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pynput import keyboard as kb
 
-from db.queries import DatabaseQueries
+from db import DatabaseQueries
 from models.logger import MODIFIERS, LoggedKey, Ngram
 
 

@@ -4,10 +4,10 @@
 
 rplugin/
 
-/**/__pycache__
-/**/.pytest_cache
+__pycache__
+.pytest_cache
 
-/build
-/src/*.egg-info
+build
+*.egg-info
 
 .DS_Store
