@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pynput import keyboard as kb
 
-from usage_tracker.db.queries import DatabaseQueries
+from usage_tracker.db import DatabaseQueries
 from usage_tracker.models.logger import MODIFIERS, LoggedKey, Ngram
 
 

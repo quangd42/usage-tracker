@@ -1,5 +1,5 @@
-from ..logger.helpers import calc_skipgrams
-from ..models.logger import LoggedKey
+from .genkey import GenkeyOutput
+from .logger import LoggedKey
 from pynput import keyboard as kb
 
 
@@ -32,8 +32,4 @@ def test_get_skipgram():
         'tt': 0.125,
     }
 
-    assert calc_skipgrams(log) == expected
-
-
-if __name__ == '__main__':
-    test_get_skipgram()
+    assert GenkeyOutput.calc_skipgrams(log) == expected

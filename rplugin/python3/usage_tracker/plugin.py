@@ -1,7 +1,7 @@
 import pynvim
 
-from usage_tracker.db.queries import DatabaseQueries
-from usage_tracker.logger.logger import Logger
+from usage_tracker.db import DatabaseQueries
+from usage_tracker.logger import Logger
 
 DB_PATH = 'nvim-log.db'
 

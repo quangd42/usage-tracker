@@ -1,7 +1,6 @@
 import sqlite3
 from typing import Any
 
-from usage_tracker.logger.helpers import calc_skipgrams
 from usage_tracker.models.genkey import GenkeyOutput
 from usage_tracker.models.logger import LoggedKey, Ngram
 
@@ -91,7 +90,7 @@ class DatabaseQueries:
 
     def save_log_skipgram(self, log: list[LoggedKey], session_name: str) -> None:
         cur = self.conn.cursor()
-        skipgrams = calc_skipgrams(log)
+        skipgrams = GenkeyOutput.calc_skipgrams(log)
         for key in skipgrams:
             res = cur.execute(
                 'SELECT id FROM skipgrams WHERE name = ? AND session = ?',

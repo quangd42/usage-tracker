@@ -8,7 +8,7 @@ version = "0.0.2"
 dependencies = ["pynput", "click", "tabulate"]
 
 [tool.setuptools.packages.find]
-where = ["src"] # ["."] by default
+where = ["."] # ["."] by default
 # include = ["mypackage*"]  # ["*"] by default
 # exclude = ["mypackage.tests*"]  # empty by default
 # namespaces = false  # true by default
@@ -19,4 +19,4 @@ klgr = "cli.main:cli"
 [tool.pyright]
 venv = ".cli_venv"
 venvPath = "."
-strict = ["/src/**/*"]
+strict = ["/**/*"]
