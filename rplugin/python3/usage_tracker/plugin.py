@@ -1,9 +1,9 @@
+import os
+
 import pynvim
 
 from usage_tracker.db import DatabaseQueries
 from usage_tracker.logger import Logger
-
-DB_PATH = 'nvim-log.db'
 
 
 @pynvim.plugin
@@ -11,11 +11,13 @@ class LoggerPlugin:
     def __init__(self, vim: pynvim.Nvim) -> None:
         self._vim = vim
         self._logger: Logger | None = None
+        data_dir = vim.funcs.stdpath('data')
+        self._db_path = os.path.join(data_dir, 'utrack-log.db')
 
     @pynvim.command('UTrackerRun', nargs='*', sync=True)
     def start_logger(self, args):
         try:
-            self._logger = Logger(DatabaseQueries(DB_PATH), 'nvim')
+            self._logger = Logger(DatabaseQueries(self._db_path), 'nvim')
             self._logger.start()
             self._vim.api.notify('Logger started', 2, {})
         except Exception as e:
