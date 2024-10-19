@@ -73,6 +73,10 @@ class Logger:
                     return kb.Key.shift
         return mod
 
+    @property
+    def running(self) -> bool:
+        return self.listener.is_alive()
+
     def _log_ngram(self, current_key: LoggedKey) -> None:
         # If this is first keypress, no bigram
         if len(self.log_letters) == 0:
@@ -103,18 +107,12 @@ class Logger:
                 )
             )
 
-    def _save_to_db(self, end_logging: bool = False) -> None:
+    def _save_to_db(self) -> None:
         try:
-            if end_logging:
-                self.db.save_log_letters(self.log_letters[:-5], self.session_name)
-                self.db.save_log_bigrams(self.log_bigrams[:-5], self.session_name)
-                self.db.save_log_trigrams(self.log_trigrams[:-5], self.session_name)
-                self.db.save_log_skipgram(self.log_letters[:-5], self.session_name)
-            else:
-                self.db.save_log_letters(self.log_letters, self.session_name)
-                self.db.save_log_bigrams(self.log_bigrams, self.session_name)
-                self.db.save_log_trigrams(self.log_trigrams, self.session_name)
-                self.db.save_log_skipgram(self.log_letters, self.session_name)
+            self.db.save_log_letters(self.log_letters, self.session_name)
+            self.db.save_log_bigrams(self.log_bigrams, self.session_name)
+            self.db.save_log_trigrams(self.log_trigrams, self.session_name)
+            self.db.save_log_skipgram(self.log_letters, self.session_name)
             self.db.conn.commit()
 
         except Exception as exception:
@@ -130,24 +128,15 @@ class Logger:
         if self.listener.is_alive():
             self.end_time = datetime.now()
             self.listener.stop()
-            self._save_to_db(end_logging=True)
+            self._save_to_db()
             print('Session ended.')
-        else:
-            raise Exception('Logging is not in session.')
 
     def pause(self) -> None:
         if self.listener.is_alive():
             self.is_paused = True
-            self.log_letters = self.log_letters[:-5]
-            self.log_bigrams = self.log_bigrams[:-5]
-            self.log_trigrams = self.log_trigrams[:-5]
             print('Session paused...')
-        else:
-            raise Exception('Logging is not in session.')
 
     def resume(self) -> None:
         if self.listener.is_alive():
             self.is_paused = False
             print('Session resumed...')
-        else:
-            raise Exception('Logging is not in session.')
