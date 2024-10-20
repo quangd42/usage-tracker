@@ -14,11 +14,12 @@ class LoggerPlugin:
         data_dir = vim.funcs.stdpath('data')
         self._db_path = os.path.join(data_dir, 'utracker-log.db')
 
-    @pynvim.command('UTrackerRun', sync=True)
-    def start_logger(self) -> None:
-        if self._logger is None:
-            self._logger = Logger(DatabaseQueries(self._db_path), 'nvim')
+    @pynvim.command('UTrackerRun', nargs='?', sync=True)
+    def start_logger(self, session_name: str = 'nvim') -> None:
+        if self._logger is not None and self._logger.running:
+            return
         try:
+            self._logger = Logger(DatabaseQueries(self._db_path), session_name)
             self._logger.start()
             self._vim.api.notify('Logger started', 2, {})
         except Exception as e:
@@ -63,3 +64,11 @@ class LoggerPlugin:
         if not self._logger or not self._logger.running:
             return
         self._logger.stop()
+
+
+# TODO:
+# - Update readme
+# - Add option to silent notification on resume and paused
+# - Add option to log all (outside of vim)
+# - Add ways to view tracked data in a buffer
+# - Remove default autocmd, provide default suggested set of autocmd instead
