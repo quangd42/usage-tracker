@@ -1,4 +1,5 @@
 import sqlite3
+from pathlib import Path
 from typing import Any
 
 from usage_tracker.models.genkey import GenkeyOutput
@@ -6,7 +7,7 @@ from usage_tracker.models.logger import LoggedKey, Ngram
 
 
 class DatabaseQueries:
-    def __init__(self, db_path: str) -> None:
+    def __init__(self, db_path: str | Path) -> None:
         # https://stackoverflow.com/questions/48218065/objects-created-in-a-thread-can-only-be-used-in-that-same-thread
         self.conn = sqlite3.connect(db_path, check_same_thread=False)
         self._db_init()

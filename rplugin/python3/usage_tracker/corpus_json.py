@@ -3,22 +3,20 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Protocol
 
-import click
-
 
 class CorpusDict(Protocol):
     def to_corpora_dict(self) -> dict[str, Any]: ...
 
 
-def save_to_json(data: CorpusDict) -> None:
-    output_dir = Path.cwd() / 'data'
+def save_to_json(data: CorpusDict, output_dir: Path) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
     filename = f'{datetime.now().strftime('%Y%m%d_%H%M%S')}.json'
+    output_file = output_dir / filename
 
     try:
-        with open(output_dir / filename, 'w') as f:
+        with open(output_file, 'w') as f:
             f.write(json.dumps(data.to_corpora_dict()))
-        click.echo(f'File saved to {output_dir / filename}!')
+        return output_file
 
     except Exception as e:
-        raise click.ClickException(f'Error saving to json: {e}')
+        raise Exception(f'Error saving to json: {e}')
