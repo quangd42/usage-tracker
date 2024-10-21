@@ -1,0 +1,102 @@
+*utracker.txt*
+*utracker* *usage-tracker*
+=================================================================================
+Table of contents                                           *utracker-contents*
+
+    1. Commands........................................|utracker-commands|
+    2. Recipes.........................................|utracker-recipes|
+
+=================================================================================
+COMMANDS                                                     *utracker-commands*
+
+                                                                *:UTrackerRun*
+:UTrackerRun [session_name]
+  Start the logger with `session_name` as name if provided, if not the default
+  value is `nvim`. Use this to label your data.
+
+                                                               *:UTrackerStop*
+:UTrackerStop
+  Stop running logger if any.
+
+                                                              *:UTrackerPause*
+:UTrackerPause
+  Pause running logger if any.
+
+                                                             *:UTrackerResume*
+:UTrackerResume
+  Resume running logger if any.
+
+                                                             *:UTrackerExport*
+:UTrackerExport [session_name]
+  Export tracked data in `session_name` into json format usable by genkey. If
+  `session_name` is not provided, default to `nvim`.
+  All logged data is saved in `utracker` in your `data` directory >
+  :echo stdpath('data')
+<
+
+=================================================================================
+RECIPES                                                        *utracker-recipes*
+=================================================================================
+
+Without further setup, the plugin will track all keypresses (in and outside of
+Neovim) as long as nvim is running. To narrow down what you want to track, you
+can set up autocmds.
+
+Track all keypresses in Neovim, except for what you type in Insert mode. >lua
+
+  local utracker = vim.api.nvim_create_augroup("UTracker", { clear = true })
+  -- Pause the tracker when nvim loses focus, or when you enter Insert mode
+  vim.api.nvim_create_autocmd({ "FocusLost", "InsertEnter" }, {
+    group = utracker,
+    callback = function()
+      vim.cmd("UTrackerPause")
+    end,
+  })
+  -- ... and resume when you're back in nvim, if you're not in Insert mode
+  vim.api.nvim_create_autocmd("FocusGained", {
+    group = utracker,
+    callback = function()
+      local current_mode = vim.api.nvim_get_mode()
+      if current_mode.mode ~= "i" then
+        vim.cmd("UTrackerResume")
+      end
+    end,
+  })
+  -- ... or when you're out of Insert mode
+  vim.api.nvim_create_autocmd("InsertLeave", {
+    group = utracker,
+    callback = function()
+      vim.cmd("UTrackerResume")
+    end,
+  })
+
+<
+Track all keypresses in Normal mode only. >lua
+
+  local utracker = vim.api.nvim_create_augroup("UTracker", { clear = true })
+  vim.api.nvim_create_autocmd({ "FocusLost", "ModeChanged" }, {
+    pattern = "n:*",
+    group = utracker,
+    callback = function()
+      vim.cmd("UTrackerPause")
+    end,
+  })
+  vim.api.nvim_create_autocmd("FocusGained", {
+    group = utracker,
+    callback = function()
+      local current_mode = vim.api.nvim_get_mode()
+      if current_mode.mode ~= "i" then
+        vim.cmd.UTrackerResume()
+      end
+    end,
+  })
+  vim.api.nvim_create_autocmd("ModeChanged", {
+    pattern = "*:n",
+    group = utracker,
+    callback = function()
+      vim.cmd.UTrackerResume()
+    end,
+  })
+>
+
+vim:tw=78:ts=8:ft=help:norl
