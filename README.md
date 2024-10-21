@@ -4,7 +4,7 @@
 
 A flexible plugin to log all of the keypresses categorized into ngrams.
 This can be used as part of a corpus to create a personalized keyboard layout,
-or to track hotkey usage (with window Managers, tmux, etc) and find bad habits
+or to track hotkey usage (with window managers, tmux, etc) and find bad habits
 or optimize your workflow.
 
 See more details in the [help file](https://github.com/quangd42/usage-tracker/blob/main/doc/utracker.txt).
@@ -18,6 +18,7 @@ plus some niceties [here](https://github.com/quangd42/usage-tracker/tree/cli-mai
 
 - Neovim 0.7+
 - Python 3.12+
+  - pynvim and pynput
 
 ## Table of contents
 
@@ -51,12 +52,15 @@ plugin manager hasn't done so for you.
 try following [this guide](https://neovim.io/doc/user/provider.html#_python-integration)
 to install `pynvim` and configure the provider.
 
-This plugin also depends on `pynput` and will try to install it automatically,
-but if it fails you will need to install it yourself, similarly to `pynvim`.
+This plugin also depends on `pynput`, you can install it similarly to `pynvim` using
+the Python executable that Neovim is using.
 
 ```sh
 python3 -m pip install --user --upgrade pynvim pynput
 ```
+
+I personally create a dedicated virtual env for neovim and install whatever required
+there, following the [above mentioned guide](https://neovim.io/doc/user/provider.html#_python-integration).
 
 ## 🛠️ Suggested Usage
 
