@@ -7,6 +7,13 @@ This can be used as part of a corpus to create a personalized keyboard layout,
 or to track hotkey usage (with window Managers, tmux, etc) and find bad habits
 or optimize your workflow.
 
+See more details in the [help file](https://github.com/quangd42/usage-tracker/blob/main/doc/utracker.txt).
+
+---
+
+There's a CLI that is a more general purpose version with the same functionalities
+plus some niceties [here](https://github.com/quangd42/usage-tracker/tree/cli-main).
+
 ## Requirements
 
 - Neovim 0.7+
@@ -20,7 +27,7 @@ or optimize your workflow.
 - [🛠️ Suggested Usage](#%F0%9F%9B%A0%EF%B8%8F-suggested-usage)
 - [💬 Notes](#%F0%9F%92%AC-notes)
 - [🚀 Features](#%F0%9F%9A%80-features)
-  * [Keypresses tracking](#keypresses-tracking)
+  * [Keypress tracking](#keypress-tracking)
   * [Alternative Keyboard Layout optimizing](#alternative-keyboard-layout-optimizing)
 - [🤝 Contributing](#%F0%9F%A4%9D-contributing)
 
@@ -33,7 +40,6 @@ You can use your favorite plugin manager. For example, with `lazy.nvim`
 ```lua
 {
   "quangd42/usage-tracker",
-  branch = "nvim-plugin",
   build = ":UpdateRemotePlugins",
 }
 ```
@@ -67,8 +73,9 @@ UTrackerExport
 So you can setup your plugin like so
 
 ```lua
+{
   "quangd42/usage-tracker",
-  branch = "nvim-plugin",
+  build = ":UpdateRemotePlugins",
   keys = {
     {
       "<leader>lr",
@@ -86,6 +93,7 @@ So you can setup your plugin like so
       desc = "Export Tracked Data",
     },
   },
+}
 ```
 
 Without further setup, the plugin will track all keypresses as long as nvim is running.
@@ -96,41 +104,34 @@ Here's my setup to track all keypresses while inside nvim except in insert mode.
 ```lua
 
 local utracker = vim.api.nvim_create_augroup("UTracker", { clear = true })
--- Pause the tracker when nvim loses focus
-vim.api.nvim_create_autocmd("FocusLost", {
-  group = utracker,
-  callback = function()
-    vim.cmd("UTrackerPause")
-  end,
+-- Pause the tracker when nvim loses focus, or when you enter Insert mode
+vim.api.nvim_create_autocmd({ "FocusLost", "InsertEnter" }, {
+ group = utracker,
+ callback = function()
+  vim.cmd("UTrackerPause")
+ end,
 })
--- ... and resume when you're back in nvim
+-- ... and resume when you're back in nvim as long as you're not in Insert mode
 vim.api.nvim_create_autocmd("FocusGained", {
-  group = utracker,
-  callback = function()
-    local current_mode = vim.api.nvim_get_mode()
-    if current_mode.mode ~= "i" then
-      vim.cmd("UTrackerResume")
-    end
-  end,
+ group = utracker,
+ callback = function()
+  local current_mode = vim.api.nvim_get_mode()
+  if current_mode.mode ~= "i" then
+   vim.cmd("UTrackerResume")
+  end
+ end,
 })
--- Pause when you enter insert mode
-vim.api.nvim_create_autocmd("InsertEnter", {
-  group = utracker,
-  callback = function()
-    vim.cmd("UTrackerPause")
-  end,
-})
--- ... and resume when you're back out
+-- ... or when you're out of Insert mode
 vim.api.nvim_create_autocmd("InsertLeave", {
-  group = utracker,
-  callback = function()
-    vim.cmd("UTrackerResume")
-  end,
+ group = utracker,
+ callback = function()
+  vim.cmd("UTrackerResume")
+ end,
 })
-
 ```
 
 You may be interested in `ModeChanged` event `:h ModeChanged` for more flexibility.
+Beware that these events are very expensive.
 
 If the pause and resume autocmds are too noisy, you can add `silent`.
 
@@ -152,7 +153,7 @@ In MacOS, you will have to give the terminal appropriate access.
 
 ## 🚀 Features
 
-### Keypresses tracking
+### Keypress tracking
 
 - Logs all keypresses to a local database, under a session name if specified.
 - On macOS, when pressing opt+key the original key value will be tracked. For example,
